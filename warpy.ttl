@@ -1,0 +1,85 @@
+# This file is part of Warpy.
+#
+# Warpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Warpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Warpy.  If not, see <https://www.gnu.org/licenses/>.
+
+@prefix lv2:   <http://lv2plug.in/ns/lv2core#> .
+@prefix atom:  <http://lv2plug.in/ns/ext/atom#> .
+@prefix patch: <http://lv2plug.in/ns/ext/patch#> .
+@prefix urid:  <http://lv2plug.in/ns/ext/urid#> .
+@prefix param: <http://lv2plug.in/ns/ext/parameters#> .
+@prefix midi:  <http://lv2plug.in/ns/ext/midi#> .
+@prefix doap:  <http://usefulinc.com/ns/doap#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+
+@prefix warpy: <https://milky.flowers/programs/warpy#> .
+
+<https://milky.flowers/programs/warpy>
+	a lv2:Plugin ;
+	doap:name "Warpy" ;
+	doap:license <https://www.gnu.org/licenses/gpl-3.0.en.html> ;
+	lv2:project <https://milky.flowers/programs/warpy> ;
+	lv2:requiredFeature urid:map ;
+	lv2:optionalFeature lv2:hartRTCapable ;
+	patch:writable warpy:sample;
+	lv2:port [
+		a lv2:InputPort, atom:AtomPort ;
+		atom:bufferType atom:Sequence ;
+		atom:supports midi:MidiEvent,
+			patch:Message ;
+		lv2:designation lv2:control ;
+		lv2:index 0 ;
+		lv2:symbol "in" ;
+		lv2:name "In" ;
+	] , [
+		a lv2:OutputPort, lv2:AudioPort ;
+		lv2:index 1 ;
+		lv2:symbol "out_l" ;
+		lv2:name "Left" ;
+	] , [
+		a lv2:OutputPort, lv2:AudioPort ;
+		lv2:index 2 ;
+		lv2:symbol "out_r"
+		lv2:name "Right" ;
+	] , [
+		a lv2:InputPort, lv2:ControlPort ;
+		lv2:index 3 ;
+		lv2:symbol "speed"
+		lv2:name "Speed" ;
+		lv2:default 0.5 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 1.0 ;
+	] , [
+		a lv2:InputPort, lv2:ControlPort ;
+		lv2:index 4 ;
+		lv2:symbol "center"
+		lv2:name "Center" ;
+		lv2:portProperty lv2:integer ;
+		lv2:default 60.0 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 127.0 ;
+	] , [
+		a lv2:InputPort, lv2:ControlPort ;
+		lv2:index 3 ;
+		lv2:symbol "gain"
+		lv2:name "Gain" ;
+		lv2:default 0.5 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 1.0 ;
+	] , [
+
+warpy:sample
+	a lv2:Parameter ;
+	rdfs:label "sample" ;
+	rdfs:range atom:Path .
+

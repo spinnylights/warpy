@@ -1,0 +1,22 @@
+# This file is part of Warpy.
+#
+# Warpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Warpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Warpy.  If not, see <https://www.gnu.org/licenses/>.
+
+@prefix lv2:  <http://lv2plug.in/ns/lv2core#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+<https://milky.flowers/programs/warpy>
+	a lv2:plugin ;
+	lv2:binary <warpy.so> ;
+	rdfs:seeAlso <warpy.ttl> .
