@@ -1,1 +1,4 @@
 warpy.orc.c
+*.ogg
+*.wav
+test_warpy

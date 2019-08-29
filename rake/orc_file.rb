@@ -14,7 +14,8 @@ class OrcFile
   end
 
   def conv_commentless_to_hexdump
-    `xxd -C -i #{comless_file} > #{outfile}`
+    `xxd -i < #{comless_file} > #{outfile}`
+    `echo ', 0' >> #{outfile}`
     `rm #{comless_file}`
   end
 

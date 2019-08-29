@@ -18,14 +18,20 @@
 #ifndef xda31427f8254d79912f2b7d75300e4a
 #define xda31427f8254d79912f2b7d75300e4a
 
+#include <stdint.h>
+#include <stdbool.h>
+
 struct warpy;
 
-extern struct warpy* start_warpy(void);
-extern void stop_warpy(struct warpy* warpy);
+struct warpy* start_warpy(uint64_t sample_rate, bool redirect_audio);
+void perform_warpy(struct warpy* warpy);
+void stop_warpy(struct warpy* warpy);
 
-extern void update_sample_path(struct warpy* warpy, char* path);
-extern void update_speed(struct warpy* warpy, double norm_speed);
-extern void update_gain(struct warpy* warpy, float norm_gain);
-extern void update_center(struct warpy* warpy, int center);
+void send_midi_message(struct warpy* warpy, uint8_t* raw, uint64_t size);
+
+void update_sample_path(struct warpy* warpy, char* path);
+void update_speed(struct warpy* warpy, double norm_speed);
+void update_gain(struct warpy* warpy, float norm_gain);
+void update_center(struct warpy* warpy, int center);
 
 #endif

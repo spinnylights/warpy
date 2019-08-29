@@ -18,15 +18,36 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <errno.h>
 #include <math.h>
 #include <csound/csound.h>
 
 #include "warpy.h"
-#include "warpy.orc.c"
+
+static const char WARPY_ORC[] = {
+        #include "warpy.orc.xxd"
+};
+
+struct midi_message {
+        uint8_t* raw_message;
+        uint64_t size;
+};
 
 struct warpy {
         CSOUND* csound;
+        struct midi_message* midi_message;
+        MYFLT* audio_output_buffer;
+        CSOUND_PARAMS* params;
 };
+
+static struct warpy* create_warpy(void)
+{
+        struct warpy* warpy = (struct warpy*)malloc(sizeof(struct warpy));
+        struct midi_message* midi_message =
+                (struct midi_message*)malloc(sizeof(struct midi_message));
+        warpy->midi_message = midi_message;
+        return warpy;
+}
 
 static bool ensure_status(const int status,
                           const char* const errmsg,
@@ -34,7 +55,7 @@ static bool ensure_status(const int status,
 {
         if (status != 0) {
                 puts(errmsg);
-                fprintf(stderr, "    error %d\n", status);
+                fprintf(stderr, "    csound error %d\n", status);
                 csoundDestroy(csound);
                 return false;
         } else {
@@ -44,11 +65,114 @@ static bool ensure_status(const int status,
 
 static const char* KEEP_RUNNING = "i \"PathGetter\" 0 z\n";
 
-struct warpy* start_warpy(void)
+static int open_input_device(CSOUND* csound,
+                             void** user_data,
+                             const char* dev_name)
 {
-        struct warpy* warpy = (struct warpy*)malloc(sizeof(struct warpy));
+        *user_data = csoundGetHostData(csound);
+        if (!*user_data) {
+                fprintf(stderr, "Csound host data is null\n");
+                return CSOUND_ERROR;
+        }
+        return 0;
+}
 
-        CSOUND* csound = csoundCreate(NULL);
+static void clear_midi(struct warpy* warpy)
+{
+        uint8_t empty[] = { 0x00 };
+        warpy->midi_message->raw_message = empty;
+        warpy->midi_message->size = 0;
+}
+
+static int read_midi_data(CSOUND* csound,
+                          void* user_data,
+                          unsigned char *buffer,
+                          int space_in_buffer)
+{
+        struct warpy* warpy = (struct warpy*)user_data;
+        if (warpy->midi_message->size > UINT32_MAX) {
+                fprintf(stderr, "MIDI messages must fit in 32 bytes\n");
+                return -(abs(EINVAL));
+        }
+
+        uint32_t size = (uint32_t)warpy->midi_message->size;
+
+        if ((int64_t)space_in_buffer - size < 0) {
+                fprintf(stderr, "No space left in Csound MIDI buffer\n");
+                return -(abs(CSOUND_MEMORY));
+        }
+
+        uint8_t* message = warpy->midi_message->raw_message;
+        uint32_t i;
+        for (i = 0; i < size; i++) {
+                *buffer++ = message[i];
+        }
+
+        if (size)
+                clear_midi(warpy);
+
+        return size;
+}
+
+static void check_sample_rate(uint64_t* sample_rate)
+{
+        if (*sample_rate > UINT32_MAX) {
+                uint16_t reasonable_sample_rate = 48000;
+                fprintf(stderr, "WARN: invalid sample rate of %lu\n", *sample_rate);
+                fprintf(stderr, "      setting sample rate to %d\n", reasonable_sample_rate);
+                *sample_rate = reasonable_sample_rate;
+        }
+}
+
+static void set_up_midi(CSOUND* csound)
+{
+        csoundSetOption(csound, "-+rtmidi=null");
+        csoundSetOption(csound, "-M0");
+        csoundSetHostImplementedMIDIIO(csound, true);
+        csoundSetExternalMidiInOpenCallback(csound, open_input_device);
+        csoundSetExternalMidiReadCallback(csound, read_midi_data);
+}
+
+static void set_up_audio(CSOUND* csound, bool redirect_audio)
+{
+        if (redirect_audio) {
+                csoundSetHostImplementedAudioIO(csound, 1, 0);
+                csoundSetOption(csound, "-n"); // disable writing audio to disk
+                csoundSetOption(csound, "-d"); // disable text+graphical output
+        }
+        else {
+                csoundSetOption(csound, "--ogg");
+                csoundSetOption(csound, "--output=test.ogg");
+        };
+}
+
+static void set_params(struct warpy* warpy, CSOUND* csound, uint64_t sample_rate)
+{
+
+        CSOUND_PARAMS* params = (CSOUND_PARAMS*)malloc(sizeof(CSOUND_PARAMS));
+        csoundGetParams(csound, params);
+
+        params->sample_rate_override = sample_rate;
+        csoundSetOption(csound, "--ksmps=64");
+        params->nchnls_override = 2;
+        params->e0dbfs_override = 1;
+
+        csoundSetParams(csound, params);
+        warpy->params = params;
+}
+
+struct warpy* start_warpy(uint64_t sample_rate, bool redirect_audio)
+{
+        check_sample_rate(&sample_rate);
+
+        struct warpy* warpy = create_warpy();
+
+        CSOUND* csound = csoundCreate(warpy);
+
+        set_up_midi(csound);
+        set_up_audio(csound, redirect_audio);
+        set_params(warpy, csound, sample_rate);
+
         int orcstatus = csoundCompileOrc(csound, WARPY_ORC);
         if (!ensure_status(orcstatus,
                            "Orchestra did not compile\n",
@@ -59,13 +183,37 @@ struct warpy* start_warpy(void)
                            "Problem with dummy score\n",
                            csound))
                 return NULL;
+        int startstatus = csoundStart(csound);
+        if (!ensure_status(startstatus,
+                           "Csound failed to start\n",
+                           csound))
+                return NULL;
+
+
+        if (redirect_audio)
+                warpy->audio_output_buffer = csoundGetSpout(csound);
+
         warpy->csound = csound;
         return warpy;
 }
 
+void perform_warpy(struct warpy* warpy)
+{
+        csoundPerformKsmps(warpy->csound);
+}
+
+void send_midi_message(struct warpy* warpy, uint8_t* raw, uint64_t size)
+{
+        warpy->midi_message->raw_message = raw;
+        warpy->midi_message->size = size;
+}
+
 void stop_warpy(struct warpy* warpy)
 {
+        csoundCleanup(warpy->csound);
+        csoundReset(warpy->csound);
         csoundDestroy(warpy->csound);
+        free(warpy->params);
         free(warpy);
 }
 
