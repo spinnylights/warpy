@@ -422,6 +422,10 @@ void update_gain(struct warpy* warpy, float norm_gain)
 
 void update_center(struct warpy* warpy, int center)
 {
+        if (warpy->bus_args->center == center)
+                return;
+        warpy->bus_args->center = center;
+
         if (center < 0)
                 center = 0;
         if (center > 127) {
