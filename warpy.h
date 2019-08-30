@@ -24,8 +24,8 @@
 struct warpy;
 
 struct audio_sample {
-        float left;
-        float right;
+	float left;
+	float right;
 };
 
 struct warpy* create_warpy(double sample_rate);
