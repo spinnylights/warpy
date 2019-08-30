@@ -331,6 +331,8 @@ int get_channel_count(struct warpy* warpy)
 
 void update_sample_path(struct warpy* warpy, char* path)
 {
+        // it's actually faster to just set the channel every frame than it
+        // is to check if setting it is redundant
         csoundSetStringChannel(warpy->csound, "path", path);
 }
 
