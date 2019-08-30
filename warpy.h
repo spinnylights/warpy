@@ -23,11 +23,18 @@
 
 struct warpy;
 
+struct audio_sample {
+        float left;
+        float right;
+};
+
 struct warpy* start_warpy(uint64_t sample_rate, bool redirect_audio);
 void perform_warpy(struct warpy* warpy);
 void stop_warpy(struct warpy* warpy);
 
 void send_midi_message(struct warpy* warpy, uint8_t* raw, uint64_t size);
+struct audio_sample gen_sample(struct warpy* warpy);
+int get_channel_count(struct warpy* warpy);
 
 void update_sample_path(struct warpy* warpy, char* path);
 void update_speed(struct warpy* warpy, double norm_speed);

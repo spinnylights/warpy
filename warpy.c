@@ -24,6 +24,8 @@
 
 #include "warpy.h"
 
+#define CONTROL_PERIOD_FRAMES 1
+
 static const char WARPY_ORC[] = {
         #include "warpy.orc.xxd"
 };
@@ -33,19 +35,51 @@ struct midi_message {
         uint64_t size;
 };
 
+static void clear_midi_message(struct midi_message* message)
+{
+        uint8_t empty[] = { 0x00 };
+        message->raw_message = empty;
+        message->size = 0;
+}
+
+static struct midi_message* create_midi_message(void)
+{
+        struct midi_message* message =
+                (struct midi_message*)malloc(sizeof(struct midi_message));
+        clear_midi_message(message);
+        return message;
+}
+
+static struct audio_sample* create_audio_sample(void)
+{
+        struct audio_sample* audio_sample =
+                (struct audio_sample*)malloc(sizeof(struct audio_sample));
+        audio_sample->left = 0;
+        audio_sample->right = 0;
+        return audio_sample;
+}
+
 struct warpy {
         CSOUND* csound;
+        int channels;
         struct midi_message* midi_message;
-        MYFLT* audio_output_buffer;
+        struct audio_sample* audio_sample;
         CSOUND_PARAMS* params;
+        uint32_t control_period_frames;
+        uint32_t audio_buffer_pos;
+        bool never_run;
 };
 
 static struct warpy* create_warpy(void)
 {
         struct warpy* warpy = (struct warpy*)malloc(sizeof(struct warpy));
-        struct midi_message* midi_message =
-                (struct midi_message*)malloc(sizeof(struct midi_message));
-        warpy->midi_message = midi_message;
+        warpy->midi_message = create_midi_message();
+        warpy->audio_sample = create_audio_sample();
+        int channels = 2;
+        warpy->channels = channels;
+        warpy->control_period_frames = CONTROL_PERIOD_FRAMES;
+        warpy->audio_buffer_pos = 0;
+        warpy->never_run = true;
         return warpy;
 }
 
@@ -77,13 +111,6 @@ static int open_input_device(CSOUND* csound,
         return 0;
 }
 
-static void clear_midi(struct warpy* warpy)
-{
-        uint8_t empty[] = { 0x00 };
-        warpy->midi_message->raw_message = empty;
-        warpy->midi_message->size = 0;
-}
-
 static int read_midi_data(CSOUND* csound,
                           void* user_data,
                           unsigned char *buffer,
@@ -109,7 +136,7 @@ static int read_midi_data(CSOUND* csound,
         }
 
         if (size)
-                clear_midi(warpy);
+                clear_midi_message(warpy->midi_message);
 
         return size;
 }
@@ -141,20 +168,33 @@ static void set_up_audio(CSOUND* csound, bool redirect_audio)
                 csoundSetOption(csound, "-d"); // disable text+graphical output
         }
         else {
-                csoundSetOption(csound, "--ogg");
-                csoundSetOption(csound, "--output=test.ogg");
+                //csoundSetOption(csound, "--ogg");
+                csoundSetOption(csound, "--output=test.wav");
         };
 }
 
-static void set_params(struct warpy* warpy, CSOUND* csound, uint64_t sample_rate)
+static void set_ksmps(CSOUND* csound, uint32_t ksmps)
+{
+        if (ksmps == 0) ksmps = 1;
+        const unsigned int ksmps_digits = floor(log10(ksmps) + 1);
+        const char* const ksmps_flag = "--ksmps=";
+        char ksmps_arg[strlen(ksmps_flag) + ksmps_digits + 1];
+        sprintf(ksmps_arg, "%s%d", ksmps_flag, ksmps);
+        csoundSetOption(csound, ksmps_arg);
+}
+
+static void set_params(struct warpy* warpy,
+                       CSOUND* csound,
+                       uint64_t sample_rate,
+                       uint32_t control_period_frames)
 {
 
         CSOUND_PARAMS* params = (CSOUND_PARAMS*)malloc(sizeof(CSOUND_PARAMS));
         csoundGetParams(csound, params);
 
         params->sample_rate_override = sample_rate;
-        csoundSetOption(csound, "--ksmps=64");
-        params->nchnls_override = 2;
+        set_ksmps(csound, control_period_frames);
+        params->nchnls_override = warpy->channels;
         params->e0dbfs_override = 1;
 
         csoundSetParams(csound, params);
@@ -171,8 +211,7 @@ struct warpy* start_warpy(uint64_t sample_rate, bool redirect_audio)
 
         set_up_midi(csound);
         set_up_audio(csound, redirect_audio);
-        set_params(warpy, csound, sample_rate);
-
+        set_params(warpy, csound, sample_rate, CONTROL_PERIOD_FRAMES);
         int orcstatus = csoundCompileOrc(csound, WARPY_ORC);
         if (!ensure_status(orcstatus,
                            "Orchestra did not compile\n",
@@ -189,12 +228,34 @@ struct warpy* start_warpy(uint64_t sample_rate, bool redirect_audio)
                            csound))
                 return NULL;
 
-
-        if (redirect_audio)
-                warpy->audio_output_buffer = csoundGetSpout(csound);
-
         warpy->csound = csound;
         return warpy;
+}
+
+struct audio_sample gen_sample(struct warpy* warpy)
+{
+        struct audio_sample sample;
+
+        if (warpy->never_run) {
+                csoundPerformKsmps(warpy->csound);
+                warpy->never_run = false;
+        }
+        else if (!(warpy->audio_buffer_pos < warpy->control_period_frames)) {
+                csoundPerformKsmps(warpy->csound);
+                warpy->audio_buffer_pos = 0;
+        }
+
+        sample.left =
+                (float)csoundGetSpoutSample(warpy->csound,
+                                            warpy->audio_buffer_pos,
+                                            0);
+        sample.right =
+                (float)csoundGetSpoutSample(warpy->csound,
+                                            warpy->audio_buffer_pos,
+                                            1);
+        warpy->audio_buffer_pos++;
+
+        return sample;
 }
 
 void perform_warpy(struct warpy* warpy)
@@ -215,6 +276,11 @@ void stop_warpy(struct warpy* warpy)
         csoundDestroy(warpy->csound);
         free(warpy->params);
         free(warpy);
+}
+
+int get_channel_count(struct warpy* warpy)
+{
+        return warpy->channels;
 }
 
 void update_sample_path(struct warpy* warpy, char* path)
