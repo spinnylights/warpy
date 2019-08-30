@@ -193,17 +193,12 @@ static void set_up_midi(CSOUND* csound)
         csoundSetExternalMidiReadCallback(csound, read_midi_data);
 }
 
-static void set_up_audio(CSOUND* csound, bool redirect_audio)
+static void set_up_audio(CSOUND* csound)
 {
-        if (redirect_audio) {
-                csoundSetHostImplementedAudioIO(csound, 1, 0);
-                csoundSetOption(csound, "-n"); // disable writing audio to disk
-                csoundSetOption(csound, "-d"); // disable text+graphical output
-        }
-        else {
-                //csoundSetOption(csound, "--ogg");
-                csoundSetOption(csound, "--output=test.wav");
-        };
+        csoundSetHostImplementedAudioIO(csound, 1, 0);
+        csoundSetOption(csound, "-n"); // disable writing audio to disk
+        csoundSetOption(csound, "-d"); // daemon mode
+        csoundSetOption(csound, "--messagelevel=4"); // warnings only
 }
 
 static void set_ksmps(CSOUND* csound, uint32_t ksmps)
@@ -234,7 +229,7 @@ static void set_params(struct warpy* warpy,
         warpy->params = params;
 }
 
-struct warpy* start_warpy(uint64_t sample_rate, bool redirect_audio)
+struct warpy* start_warpy(uint64_t sample_rate)
 {
         check_sample_rate(&sample_rate);
 
@@ -243,7 +238,7 @@ struct warpy* start_warpy(uint64_t sample_rate, bool redirect_audio)
         CSOUND* csound = csoundCreate(warpy);
 
         set_up_midi(csound);
-        set_up_audio(csound, redirect_audio);
+        set_up_audio(csound);
         set_params(warpy, csound, sample_rate, CONTROL_PERIOD_FRAMES);
         int orcstatus = csoundCompileOrc(csound, WARPY_ORC);
         if (!ensure_status(orcstatus,
