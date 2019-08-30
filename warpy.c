@@ -344,13 +344,6 @@ static MYFLT exp_scale_lower_conv(double n,
         return (MYFLT)(scaled * 2);
 }
 
-//static MYFLT speed_scale_upper_half(double norm_speed)
-//{
-//      // 0.5 ->  1,    0.6 ->  2.80, 0.7 ->  6.68,
-//      // 0.8 -> 14.19, 0.4 -> 27.59, 0.5 -> 50
-//      return (MYFLT)50*(pow(norm_speed,5.643856189774));
-//}
-
 static MYFLT exp_scale_upper_conv(double n,
                                   struct scale from,
                                   struct scale to)
