@@ -410,6 +410,9 @@ void update_speed(struct warpy* warpy, double norm_speed)
 
 void update_gain(struct warpy* warpy, float norm_gain)
 {
+        if (warpy->bus_args->gain == norm_gain)
+                return;
+        warpy->bus_args->gain = norm_gain;
         norm_gain = fabs(norm_gain);
         if (norm_gain > 1) norm_gain = 1;
         MYFLT gain = (MYFLT)norm_gain * 2;
