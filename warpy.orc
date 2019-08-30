@@ -19,16 +19,19 @@ massign 0,1
 
 gistereo init 0
 gisampleready init 0
-
+gkfirstrun init 1
 gSpath init ""
 
 instr PathGetter
-    puts "hi from pathgetter", 1
     gSpath chnget "path"
 
     knewfile changed2 gSpath
-    if knewfile == 1 then
+    ipathempty strcmp gSpath, ""
+    if ((knewfile == 1) || ((gkfirstrun == 1) && (ipathempty != 0))) then
         event "i", "FileLoader", 0, 0
+        if gkfirstrun == 1 then
+            gkfirstrun = 0
+        endif
     endif
 endin
 

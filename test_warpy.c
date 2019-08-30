@@ -42,10 +42,8 @@ void play_test(struct warpy* warpy)
         float* samples = (float*)calloc(samples_length, sizeof(float));
         int i;
         for (i = 0; i < length; i++) {
-                if (i > 0){
-                        update_sample_path(warpy, "kickroll.wav");
-                        update_gain(warpy, 0.5);
-                }
+                update_sample_path(warpy, "kickroll.wav");
+                update_gain(warpy, 0.5);
                 if (i < note_length*5) {
                         update_speed(warpy, 0.05);
                         update_center(warpy, 52);
