@@ -72,11 +72,23 @@ static struct audio_sample* create_audio_sample(void)
         return audio_sample;
 }
 
+struct bus_args {
+        double speed;
+        float gain;
+        int center;
+};
+
+static struct bus_args* create_bus_args(void)
+{
+        return calloc(1, sizeof(struct bus_args));
+}
+
 struct warpy {
         CSOUND* csound;
         int channels;
         struct midi_message_buffer* midi_message_buffer;
         struct audio_sample* audio_sample;
+        struct bus_args* bus_args;
         CSOUND_PARAMS* params;
         uint32_t control_period_frames;
         uint32_t audio_buffer_pos;
@@ -88,6 +100,7 @@ static struct warpy* create_warpy(void)
         struct warpy* warpy = (struct warpy*)malloc(sizeof(struct warpy));
         warpy->midi_message_buffer = create_midi_message_buffer();
         warpy->audio_sample = create_audio_sample();
+        warpy->bus_args = create_bus_args();
         int channels = 2;
         warpy->channels = channels;
         warpy->control_period_frames = CONTROL_PERIOD_FRAMES;
@@ -364,6 +377,10 @@ static const struct scale SPEED_SCALE = {
 
 void update_speed(struct warpy* warpy, double norm_speed)
 {
+        if (warpy->bus_args->speed == norm_speed)
+                return;
+        warpy->bus_args->speed = norm_speed;
+
         MYFLT speed;
         norm_speed = fabs(norm_speed);
 
@@ -396,6 +413,7 @@ void update_gain(struct warpy* warpy, float norm_gain)
         norm_gain = fabs(norm_gain);
         if (norm_gain > 1) norm_gain = 1;
         MYFLT gain = (MYFLT)norm_gain * 2;
+
         csoundSetControlChannel(warpy->csound, "gain", gain);
 }
 
@@ -406,5 +424,9 @@ void update_center(struct warpy* warpy, int center)
         if (center > 127) {
                 center = 127;
         }
-        csoundSetControlChannel(warpy->csound, "center", center);
+
+        MYFLT current_center =
+                csoundGetControlChannel(warpy->csound, "center", NULL);
+        if (current_center != (MYFLT)center)
+                csoundSetControlChannel(warpy->csound, "center", center);
 }

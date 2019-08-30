@@ -3,3 +3,4 @@ warpy.orc.*
 *.wav
 test_warpy
 test/tinywav
+*.time
