@@ -96,9 +96,11 @@ void play_test(struct warpy* warpy)
 }
 
 int main(int argc, char* argv[]) {
-        struct warpy* warpy = start_warpy(SAMPLE_RATE);
-        play_test(warpy);
+        struct warpy* warpy = create_warpy(SAMPLE_RATE);
+        bool result = start_warpy(warpy);
+        if (result) play_test(warpy);
         stop_warpy(warpy);
+        destroy_warpy(warpy);
 
         return 0;
 }

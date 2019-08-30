@@ -28,8 +28,10 @@ struct audio_sample {
         float right;
 };
 
-struct warpy* start_warpy(uint64_t sample_rate);
+struct warpy* create_warpy(double sample_rate);
+bool start_warpy(struct warpy* warpy);
 void stop_warpy(struct warpy* warpy);
+void destroy_warpy(struct warpy* warpy);
 
 void send_midi_message(struct warpy* warpy, uint8_t* raw, uint64_t size);
 struct audio_sample gen_sample(struct warpy* warpy);
