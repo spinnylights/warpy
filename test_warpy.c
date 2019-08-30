@@ -42,13 +42,19 @@ void play_test(struct warpy* warpy)
         float* samples = (float*)calloc(samples_length, sizeof(float));
         int i;
         for (i = 0; i < length; i++) {
-                if (i == 1) {
+                if (i > 0){
                         update_sample_path(warpy, "kickroll.wav");
-                        update_speed(warpy, 0.05);
                         update_gain(warpy, 0.5);
-                        update_center(warpy, 52);
                 }
-                else if (i == note_length)
+                if (i < note_length*5) {
+                        update_speed(warpy, 0.05);
+                        update_center(warpy, 52);
+                } else {
+                        update_speed(warpy, 0.9);
+                        update_center(warpy, 25);
+                }
+
+                if      (i == note_length)
                         send_midi_message(warpy, c4_on, 3);
                 else if (i == note_length*2 - 1)
                         send_midi_message(warpy, c4_off, 3);
@@ -64,10 +70,6 @@ void play_test(struct warpy* warpy)
                         send_midi_message(warpy, c6_on, 3);
                 else if (i == note_length*5 - 1)
                         send_midi_message(warpy, c6_off, 3);
-                else if (i == note_length*5) {
-                        update_speed(warpy, 0.9);
-                        update_center(warpy, 25);
-                }
                 else if (i == note_length*6)
                         send_midi_message(warpy, c4_on, 3);
                 else if (i == note_length*7 - 1)

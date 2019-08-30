@@ -29,7 +29,6 @@ struct audio_sample {
 };
 
 struct warpy* start_warpy(uint64_t sample_rate, bool redirect_audio);
-void perform_warpy(struct warpy* warpy);
 void stop_warpy(struct warpy* warpy);
 
 void send_midi_message(struct warpy* warpy, uint8_t* raw, uint64_t size);

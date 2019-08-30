@@ -24,7 +24,8 @@
 
 #include "warpy.h"
 
-#define CONTROL_PERIOD_FRAMES 1
+#define CONTROL_PERIOD_FRAMES 64
+#define MIDI_MESSAGE_BUFFER_SIZE 4096
 
 static const char WARPY_ORC[] = {
         #include "warpy.orc.xxd"
@@ -35,6 +36,12 @@ struct midi_message {
         uint64_t size;
 };
 
+struct midi_message_buffer {
+        struct midi_message* messages;
+        uint32_t size;
+        uint32_t pos;
+};
+
 static void clear_midi_message(struct midi_message* message)
 {
         uint8_t empty[] = { 0x00 };
@@ -42,12 +49,18 @@ static void clear_midi_message(struct midi_message* message)
         message->size = 0;
 }
 
-static struct midi_message* create_midi_message(void)
+static struct midi_message_buffer* create_midi_message_buffer(void)
 {
-        struct midi_message* message =
-                (struct midi_message*)malloc(sizeof(struct midi_message));
-        clear_midi_message(message);
-        return message;
+        struct midi_message_buffer* message_buffer =
+                (struct midi_message_buffer*)
+                malloc(sizeof(struct midi_message_buffer));
+        struct midi_message* messages =
+                (struct midi_message*)
+                calloc(MIDI_MESSAGE_BUFFER_SIZE, sizeof(struct midi_message));
+        message_buffer->messages = messages;
+        message_buffer->size = MIDI_MESSAGE_BUFFER_SIZE;
+        message_buffer->pos = 0;
+        return message_buffer;
 }
 
 static struct audio_sample* create_audio_sample(void)
@@ -62,7 +75,7 @@ static struct audio_sample* create_audio_sample(void)
 struct warpy {
         CSOUND* csound;
         int channels;
-        struct midi_message* midi_message;
+        struct midi_message_buffer* midi_message_buffer;
         struct audio_sample* audio_sample;
         CSOUND_PARAMS* params;
         uint32_t control_period_frames;
@@ -73,7 +86,7 @@ struct warpy {
 static struct warpy* create_warpy(void)
 {
         struct warpy* warpy = (struct warpy*)malloc(sizeof(struct warpy));
-        warpy->midi_message = create_midi_message();
+        warpy->midi_message_buffer = create_midi_message_buffer();
         warpy->audio_sample = create_audio_sample();
         int channels = 2;
         warpy->channels = channels;
@@ -117,28 +130,35 @@ static int read_midi_data(CSOUND* csound,
                           int space_in_buffer)
 {
         struct warpy* warpy = (struct warpy*)user_data;
-        if (warpy->midi_message->size > UINT32_MAX) {
-                fprintf(stderr, "MIDI messages must fit in 32 bytes\n");
-                return -(abs(EINVAL));
-        }
-
-        uint32_t size = (uint32_t)warpy->midi_message->size;
-
-        if ((int64_t)space_in_buffer - size < 0) {
-                fprintf(stderr, "No space left in Csound MIDI buffer\n");
-                return -(abs(CSOUND_MEMORY));
-        }
-
-        uint8_t* message = warpy->midi_message->raw_message;
+        uint64_t total_bytes = 0;
+        struct midi_message* midi_buffer = warpy->midi_message_buffer->messages;
+        uint32_t buffer_pos = warpy->midi_message_buffer->pos;
         uint32_t i;
-        for (i = 0; i < size; i++) {
-                *buffer++ = message[i];
+        for (i = 0; i < buffer_pos; i++) {
+                struct midi_message message = midi_buffer[i];
+                if (message.size > UINT32_MAX) {
+                        fprintf(stderr, "MIDI messages must fit in 32 bytes\n");
+                        return -(abs(EINVAL));
+                }
+
+                uint32_t size = (uint32_t)message.size;
+
+                if ((int64_t)space_in_buffer - size < 0) {
+                        fprintf(stderr, "No space left in Csound MIDI buffer\n");
+                        return -(abs(CSOUND_MEMORY));
+                }
+
+                if (size) {
+                        uint32_t i;
+                        for (i = 0; i < size; i++)
+                                *buffer++ = message.raw_message[i];
+                        clear_midi_message(&midi_buffer[i]);
+                        total_bytes += size;
+                }
         }
+        warpy->midi_message_buffer->pos = 0;
 
-        if (size)
-                clear_midi_message(warpy->midi_message);
-
-        return size;
+        return total_bytes;
 }
 
 static void check_sample_rate(uint64_t* sample_rate)
@@ -232,16 +252,21 @@ struct warpy* start_warpy(uint64_t sample_rate, bool redirect_audio)
         return warpy;
 }
 
+static void run_warpy(struct warpy* warpy)
+{
+        csoundPerformKsmps(warpy->csound);
+}
+
 struct audio_sample gen_sample(struct warpy* warpy)
 {
         struct audio_sample sample;
 
         if (warpy->never_run) {
-                csoundPerformKsmps(warpy->csound);
+                run_warpy(warpy);
                 warpy->never_run = false;
         }
         else if (!(warpy->audio_buffer_pos < warpy->control_period_frames)) {
-                csoundPerformKsmps(warpy->csound);
+                run_warpy(warpy);
                 warpy->audio_buffer_pos = 0;
         }
 
@@ -258,15 +283,23 @@ struct audio_sample gen_sample(struct warpy* warpy)
         return sample;
 }
 
-void perform_warpy(struct warpy* warpy)
-{
-        csoundPerformKsmps(warpy->csound);
+static bool space_left_in_midi_buffer(struct midi_message_buffer* buffer) {
+        return buffer->pos < buffer->size;
 }
 
 void send_midi_message(struct warpy* warpy, uint8_t* raw, uint64_t size)
 {
-        warpy->midi_message->raw_message = raw;
-        warpy->midi_message->size = size;
+        if (!space_left_in_midi_buffer(warpy->midi_message_buffer)) {
+                fprintf(stderr,
+                        "WARN: No space left in MIDI buffer; \
+                        input discarded\n");
+                return;
+        }
+        struct midi_message* messages = warpy->midi_message_buffer->messages;
+        uint32_t* pos = &warpy->midi_message_buffer->pos;
+        messages[*pos].raw_message = raw;
+        messages[*pos].size = size;
+        (*pos)++;
 }
 
 void stop_warpy(struct warpy* warpy)
