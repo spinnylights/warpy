@@ -48,22 +48,14 @@ endin
 
 instr 1
     if gisampleready == 1 then
-        kspeed chnget "speed"
-        Sspeed sprintfk "speed: %4.2f", kspeed
-        puts Sspeed, 1
+        kspeed  chnget "speed"
+        kgain   chnget "gain"
+        kcenter chnget "center"
 
-        kgain chnget "gain"
-        Sgain sprintfk "gain: %4.2f", kgain
-        puts Sgain, 1
         iamp  ampmidi 1
 
-        kcenter chnget "center"
-        Scenter sprintfk "center: %4.2f", kcenter
-        puts Scenter, 1
         imfreq cpsmidi
         kpitch = imfreq/cpsmidinn(kcenter)
-        Spitch sprintfk "pitch: %4.2f", kpitch
-        puts Spitch, 1
 
         aenv linsegr 0, 0.01, 1, 0.01, 0
         if gistereo == 1 then
