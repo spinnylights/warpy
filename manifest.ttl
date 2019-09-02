@@ -17,6 +17,6 @@
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 
 <https://milky.flowers/programs/warpy>
-	a lv2:plugin ;
+	a lv2:Plugin ;
 	lv2:binary <warpy.so> ;
 	rdfs:seeAlso <warpy.ttl> .

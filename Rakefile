@@ -64,6 +64,11 @@ file 'test_warpy' => ['warpy.c', 'test_warpy.c', 'warpy.orc.xxd'] do |t|
   sh "#{COMPILER} #{FLAGS} test_warpy.c warpy.c #{LIB_FLAGS} -o #{t.name}"
 end
 
+file 'warpy.so' => ['warpy.orc.xxd', 'warpy.c', 'warpy_lv2.c'] do |t|
+  sh "#{COMPILER} #{FLAGS} -c -fpic warpy_lv2.c warpy.c"
+  sh "#{COMPILER} #{FLAGS} -shared -o warpy.so warpy_lv2.o warpy.o -lm /usr/lib/libcsound64.so"
+end
+
 #CLOBBER.include(TEST_OUTFILE)
 
 task default: :build

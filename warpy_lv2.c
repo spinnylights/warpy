@@ -5,6 +5,14 @@
 #include <lv2/lv2plug.in/ns/ext/atom/forge.h>
 #include <lv2/lv2plug.in/ns/ext/atom/util.h>
 #include <lv2/lv2plug.in/ns/ext/urid/urid.h>
+#include <lv2/lv2plug.in/ns/ext/midi/midi.h>
+#include <lv2/lv2plug.in/ns/ext/atom/atom.h>
+#include <lv2/lv2plug.in/ns/ext/patch/patch.h>
+
+#include "warpy.h"
+
+#define WARPY_URI "https://milky.flowers/programs/warpy"
+#define WARPY__sample WARPY_URI "#sample"
 
 enum port_indices {
 	WARPY_IN,
@@ -15,62 +23,204 @@ enum port_indices {
 	WARPY_GAIN
 };
 
-struct ports {
-	const LV2_Atom_Sequence* in_port;
-	float*                   out_l_port;
-	float*                   out_r_port;
-	float*                   speed_port;
-	float*                   center_port;
-	float*                   gain_port;
+struct lv2 {
+	struct warpy* warpy;
+
+	struct {
+		const LV2_Atom_Sequence* in;
+		float*                   out_l;
+		float*                   out_r;
+		float*                   speed;
+		float*                   center;
+		float*                   gain;
+	} ports;
+
+	LV2_URID_Map* urid_map;
+	LV2_Atom_Forge forge;
+	struct {
+		LV2_URID atom_urid;
+		LV2_URID midi_event;
+		LV2_URID patch_set;
+		LV2_URID patch_set_property;
+		LV2_URID patch_set_value;
+		LV2_URID warpy_sample;
+	} uris;
 };
 
-struct warpy {
-	struct ports* ports;
-	char* sample_path;
-	double rate;
-};
-
-static LV2_Handle instatiate(const LV2_Descriptor*     descriptor,
-                             double                    rate,
-                             const char*               bundle_path,
-                             const LV2_Feature* const* features)
+static void map_urids(struct lv2* lv2)
 {
-	struct warpy* warpy = (struct warpy*)malloc(sizeof(struct warpy));
+	lv2->uris.atom_urid =
+	        lv2->urid_map->map(lv2->urid_map->handle, LV2_ATOM__URID);
+	lv2->uris.midi_event =
+	        lv2->urid_map->map(lv2->urid_map->handle, LV2_MIDI__MidiEvent);
+	lv2->uris.patch_set =
+	        lv2->urid_map->map(lv2->urid_map->handle, LV2_PATCH__Set);
+	lv2->uris.patch_set_property =
+	        lv2->urid_map->map(lv2->urid_map->handle, LV2_PATCH__property);
+	lv2->uris.patch_set_value =
+	        lv2->urid_map->map(lv2->urid_map->handle, LV2_PATCH__value);
+	lv2->uris.warpy_sample =
+	        lv2->urid_map->map(lv2->urid_map->handle, WARPY__sample);
+}
 
-	warpy->rate = rate;
+static LV2_Handle instantiate(const LV2_Descriptor*     descriptor,
+                              double                    rate,
+                              const char*               bundle_path,
+                              const LV2_Feature* const* features)
+{
 
-	return (LV2_Handle)warpy;
+	struct lv2* lv2 = (struct lv2*)malloc(sizeof(struct lv2));
+
+	struct warpy* warpy = create_warpy(rate);
+	lv2->warpy = warpy;
+
+	for (int i = 0; features[i]; i++)
+		if (!strcmp(features[i]->URI, LV2_URID__map))
+			lv2->urid_map = (LV2_URID_Map*)features[i]->data;
+
+	lv2_atom_forge_init(&lv2->forge, lv2->urid_map);
+
+	map_urids(lv2);
+
+	return (LV2_Handle)lv2;
 }
 
 static void connect_port(LV2_Handle instance,
                          uint32_t   port,
                          void*      data)
 {
-	struct warpy* warpy = (struct warpy*)instance;
+	struct lv2* lv2 = (struct lv2*)instance;
 
 	switch ((enum port_indices)port) {
 		case WARPY_IN:
-			warpy->ports->in_port = (const LV2_Atom_Sequence*)data;
+			lv2->ports.in = (const LV2_Atom_Sequence*)data;
 			break;
 		case WARPY_OUT_L:
-			warpy->ports->out_l_port = (float*)data;
+			lv2->ports.out_l = (float*)data;
 			break;
 		case WARPY_OUT_R:
-			warpy->ports->out_r_port = (float*)data;
+			lv2->ports.out_r = (float*)data;
 			break;
 		case WARPY_SPEED:
-			warpy->ports->speed_port = (float*)data;
+			lv2->ports.speed = (float*)data;
 			break;
 		case WARPY_CENTER:
-			warpy->ports->center_port = (float*)data;
+			lv2->ports.center = (float*)data;
 			break;
 		case WARPY_GAIN:
-			warpy->ports->gain_port = (float*)data;
+			lv2->ports.gain = (float*)data;
 			break;
 	}
 }
 
+static void activate(LV2_Handle instance)
+{
+	struct lv2* lv2 = (struct lv2*)instance;
+	start_warpy(lv2->warpy);
+}
+
+static void update_control_ports(struct lv2* lv2)
+{
+	update_speed(lv2->warpy,       *(lv2->ports.speed));
+	update_gain(lv2->warpy,        *(lv2->ports.gain));
+	update_center(lv2->warpy,      *(lv2->ports.center));
+}
+
+static void process_patch_set(struct lv2* lv2, const LV2_Atom_Object* obj)
+{
+	const LV2_Atom* property = NULL;
+	const LV2_Atom* value    = NULL;
+	lv2_atom_object_get(obj,
+			    lv2->uris.patch_set_property, &property,
+			    lv2->uris.patch_set_value,    &value,
+			    0);
+
+	if (!property) {
+		fprintf(stderr, "Patch set message sent with no property\n");
+		return;
+	} else if (property->type != lv2->uris.atom_urid) {
+		fprintf(stderr, "Patch set message property is not a URID\n");
+		return;
+	}
+
+	const uint32_t key = ((const LV2_Atom_URID*)property)->body;
+	if (key == lv2->uris.warpy_sample) {
+		char* sample_path = LV2_ATOM_BODY(value);
+		update_sample_path(lv2->warpy, sample_path);
+	}
+}
+static void process_incoming_events(struct lv2* lv2)
+{
+	LV2_ATOM_SEQUENCE_FOREACH(lv2->ports.in, event) {
+		if (event->body.type == lv2->uris.midi_event) {
+			uint8_t* raw = (uint8_t*)LV2_ATOM_BODY(&event->body);
+			uint64_t size = event->body.size;
+			send_midi_message(lv2->warpy, raw, size);
+		}
+		else if (lv2_atom_forge_is_object_type
+		        (&lv2->forge, event->body.type)) {
+			const LV2_Atom_Object* obj =
+			        (const LV2_Atom_Object*)&event->body;
+			if (obj->body.otype == lv2->uris.patch_set)
+				process_patch_set(lv2, obj);
+		};
+	}
+}
+
+static void run(LV2_Handle instance, uint32_t times)
+{
+	struct lv2* lv2 = (struct lv2*)instance;
+
+	if (times == 0) {
+		update_control_ports(lv2);
+		return;
+	}
+
+	update_control_ports(lv2);
+	process_incoming_events(lv2);
+
+	for (int i = 0; i < times; i++) {
+		struct audio_sample sample = gen_sample(lv2->warpy);
+		float* out_l = lv2->ports.out_l;
+		float* out_r = lv2->ports.out_r;
+		out_l[i] = sample.left;
+		out_r[i] = sample.right;
+	}
+}
+
+static void deactivate(LV2_Handle instance)
+{
+	struct lv2* lv2 = (struct lv2*)instance;
+	stop_warpy(lv2->warpy);
+}
+
 static void cleanup(LV2_Handle instance)
 {
-	free(instance);
+	struct lv2* lv2 = (struct lv2*)instance;
+	destroy_warpy(lv2->warpy);
+	free(lv2);
+}
+
+static const void* extension_data(const char *uri)
+{
+	return NULL;
+}
+
+static const LV2_Descriptor descriptor = {
+	WARPY_URI,
+	instantiate,
+	connect_port,
+	activate,
+	run,
+	deactivate,
+	cleanup,
+	extension_data
+};
+
+LV2_SYMBOL_EXPORT const LV2_Descriptor* lv2_descriptor(uint32_t index)
+{
+	switch (index) {
+		case 0:  return &descriptor;
+		default: return NULL;
+	}
 }

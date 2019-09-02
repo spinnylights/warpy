@@ -4,3 +4,5 @@ warpy.orc.*
 test_warpy
 test/tinywav
 *.time
+*.o
+*.so

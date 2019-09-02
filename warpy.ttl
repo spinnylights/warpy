@@ -24,6 +24,11 @@
 
 @prefix warpy: <https://milky.flowers/programs/warpy#> .
 
+warpy:sample
+	a lv2:Parameter ;
+	rdfs:label "sample" ;
+	rdfs:range atom:Path .
+
 <https://milky.flowers/programs/warpy>
 	a lv2:Plugin ;
 	doap:name "Warpy" ;
@@ -31,7 +36,7 @@
 	lv2:project <https://milky.flowers/programs/warpy> ;
 	lv2:requiredFeature urid:map ;
 	lv2:optionalFeature lv2:hartRTCapable ;
-	patch:writable warpy:sample;
+	patch:writable warpy:sample ;
 	lv2:port [
 		a lv2:InputPort, atom:AtomPort ;
 		atom:bufferType atom:Sequence ;
@@ -49,12 +54,12 @@
 	] , [
 		a lv2:OutputPort, lv2:AudioPort ;
 		lv2:index 2 ;
-		lv2:symbol "out_r"
+		lv2:symbol "out_r" ;
 		lv2:name "Right" ;
 	] , [
 		a lv2:InputPort, lv2:ControlPort ;
 		lv2:index 3 ;
-		lv2:symbol "speed"
+		lv2:symbol "speed" ;
 		lv2:name "Speed" ;
 		lv2:default 0.5 ;
 		lv2:minimum 0.0 ;
@@ -62,7 +67,7 @@
 	] , [
 		a lv2:InputPort, lv2:ControlPort ;
 		lv2:index 4 ;
-		lv2:symbol "center"
+		lv2:symbol "center" ;
 		lv2:name "Center" ;
 		lv2:portProperty lv2:integer ;
 		lv2:default 60.0 ;
@@ -70,16 +75,10 @@
 		lv2:maximum 127.0 ;
 	] , [
 		a lv2:InputPort, lv2:ControlPort ;
-		lv2:index 3 ;
-		lv2:symbol "gain"
+		lv2:index 5 ;
+		lv2:symbol "gain" ;
 		lv2:name "Gain" ;
 		lv2:default 0.5 ;
 		lv2:minimum 0.0 ;
 		lv2:maximum 1.0 ;
-	] , [
-
-warpy:sample
-	a lv2:Parameter ;
-	rdfs:label "sample" ;
-	rdfs:range atom:Path .
-
+	] .

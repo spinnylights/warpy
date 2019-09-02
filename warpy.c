@@ -20,12 +20,14 @@
 #include <stdint.h>
 #include <errno.h>
 #include <math.h>
+#include <unistd.h>
 #include <csound/csound.h>
 
 #include "warpy.h"
 
 #define CONTROL_PERIOD_FRAMES 64
 #define MIDI_MESSAGE_BUFFER_SIZE 4096
+#define MIDI_CACHE_LENGTH 256
 
 static const char WARPY_ORC[] = {
 	#include "warpy.orc.xxd"
@@ -94,6 +96,7 @@ struct warpy {
 	double sample_rate;
 	int channels;
 	struct midi_message_buffer* midi_message_buffer;
+	bool* midi_cache;
 	struct audio_sample* audio_sample;
 	struct bus_args* bus_args;
 	CSOUND_PARAMS* params;
@@ -107,6 +110,7 @@ struct warpy* create_warpy(double sample_rate)
 	struct warpy* warpy = (struct warpy*)malloc(sizeof(struct warpy));
 	warpy->sample_rate = sample_rate;
 	warpy->midi_message_buffer = create_midi_message_buffer();
+	warpy->midi_cache = (bool*)calloc(MIDI_CACHE_LENGTH, sizeof(bool));
 	warpy->audio_sample = create_audio_sample();
 	warpy->bus_args = create_bus_args();
 	int channels = 2;
@@ -147,6 +151,32 @@ static int open_input_device(CSOUND* csound,
 	return 0;
 }
 
+static bool midi_cache_get(struct warpy* warpy,
+                           uint8_t* message,
+                           uint64_t size)
+{
+	bool* cache = warpy->midi_cache;
+	if (size >= 2 && message[0] == 0x90) {
+		uint8_t note = message[1];
+		return cache[note];
+	}
+	return false;
+}
+
+static void midi_cache_set(struct warpy* warpy,
+                           uint8_t* message,
+                           uint64_t size)
+{
+	bool* cache = warpy->midi_cache;
+	if (size >= 2) {
+		uint8_t note = message[0];
+		if      (message[0] == 0x90)
+			cache[note] = true;
+		else if (message[0] == 0x80)
+			cache[note] = false;
+	}
+}
+
 static int read_midi_data(CSOUND* csound,
                           void* user_data,
                           unsigned char *buffer,
@@ -171,14 +201,23 @@ static int read_midi_data(CSOUND* csound,
 			return -(abs(CSOUND_MEMORY));
 		}
 
-		if (size) {
-			uint32_t i;
-			for (i = 0; i < size; i++)
+		if (size && !midi_cache_get(warpy,
+		                            message.raw_message,
+		                            message.size)) {
+			puts("midi message:\n");
+			for (uint32_t i = 0; i < size; i++) {
+				printf("    %x", message.raw_message[i]);
 				*buffer++ = message.raw_message[i];
+			}
+			puts("\n");
+			midi_cache_set(warpy,
+			               message.raw_message,
+			               message.size);
 			clear_midi_message(&midi_buffer[i]);
 			total_bytes += size;
 		}
 	}
+
 	warpy->midi_message_buffer->pos = 0;
 
 	return total_bytes;
@@ -373,8 +412,8 @@ static const struct scale SPEED_SCALE = {
 
 void update_speed(struct warpy* warpy, double norm_speed)
 {
-	if (warpy->bus_args->speed == norm_speed)
-		return;
+	//if (warpy->bus_args->speed == norm_speed)
+	//	return;
 	warpy->bus_args->speed = norm_speed;
 
 	MYFLT speed;
@@ -406,8 +445,8 @@ void update_speed(struct warpy* warpy, double norm_speed)
 
 void update_gain(struct warpy* warpy, float norm_gain)
 {
-	if (warpy->bus_args->gain == norm_gain)
-		return;
+	//if (warpy->bus_args->gain == norm_gain)
+	//	return;
 	warpy->bus_args->gain = norm_gain;
 	norm_gain = fabs(norm_gain);
 	if (norm_gain > 1) norm_gain = 1;
@@ -418,8 +457,8 @@ void update_gain(struct warpy* warpy, float norm_gain)
 
 void update_center(struct warpy* warpy, int center)
 {
-	if (warpy->bus_args->center == center)
-		return;
+	//if (warpy->bus_args->center == center)
+	//	return;
 	warpy->bus_args->center = center;
 
 	if (center < 0)
