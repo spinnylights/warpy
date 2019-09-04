@@ -18,8 +18,21 @@ enum port_indices {
 	WARPY_IN,
 	WARPY_OUT_L,
 	WARPY_OUT_R,
-	WARPY_SPEED,
-	WARPY_CENTER,
+	WARPY_SPEED_ADJUST,
+	WARPY_SPEED_CENTER,
+	WARPY_SPEED_LOWER_SCALE,
+	WARPY_SPEED_UPPER_SCALE,
+	WARPY_PITCH_ADJUST,
+	WARPY_PITCH_CENTER,
+	WARPY_PITCH_LOWER_SCALE,
+	WARPY_PITCH_UPPER_SCALE,
+	WARPY_ATTACK_TIME,
+	WARPY_ATTACK_SHAPE,
+	WARPY_DECAY_TIME,
+	WARPY_DECAY_SHAPE,
+	WARPY_SUSTAIN_LEVEL,
+	WARPY_RELEASE_TIME,
+	WARPY_RELEASE_SHAPE,
 	WARPY_GAIN
 };
 
@@ -30,8 +43,21 @@ struct lv2 {
 		const LV2_Atom_Sequence* in;
 		float*                   out_l;
 		float*                   out_r;
-		float*                   speed;
-		float*                   center;
+		float*                   speed_adjust;
+		float*                   speed_center;
+		float*                   speed_lower_scale;
+		float*                   speed_upper_scale;
+		float*                   pitch_adjust;
+		float*                   pitch_center;
+		float*                   pitch_lower_scale;
+		float*                   pitch_upper_scale;
+		float*                   attack_time;
+		float*                   attack_shape;
+		float*                   decay_time;
+		float*                   decay_shape;
+		float*                   sustain_level;
+		float*                   release_time;
+		float*                   release_shape;
 		float*                   gain;
 	} ports;
 
@@ -101,11 +127,50 @@ static void connect_port(LV2_Handle instance,
 		case WARPY_OUT_R:
 			lv2->ports.out_r = (float*)data;
 			break;
-		case WARPY_SPEED:
-			lv2->ports.speed = (float*)data;
+		case WARPY_SPEED_ADJUST:
+			lv2->ports.speed_adjust = (float*)data;
 			break;
-		case WARPY_CENTER:
-			lv2->ports.center = (float*)data;
+		case WARPY_SPEED_CENTER:
+			lv2->ports.speed_center = (float*)data;
+			break;
+		case WARPY_SPEED_LOWER_SCALE:
+			lv2->ports.speed_lower_scale = (float*)data;
+			break;
+		case WARPY_SPEED_UPPER_SCALE:
+			lv2->ports.speed_upper_scale = (float*)data;
+			break;
+		case WARPY_PITCH_ADJUST:
+			lv2->ports.pitch_adjust = (float*)data;
+			break;
+		case WARPY_PITCH_CENTER:
+			lv2->ports.pitch_center = (float*)data;
+			break;
+		case WARPY_PITCH_LOWER_SCALE:
+			lv2->ports.pitch_lower_scale = (float*)data;
+			break;
+		case WARPY_PITCH_UPPER_SCALE:
+			lv2->ports.pitch_upper_scale = (float*)data;
+			break;
+		case WARPY_ATTACK_TIME:
+			lv2->ports.attack_time = (float*)data;
+			break;
+		case WARPY_ATTACK_SHAPE:
+			lv2->ports.attack_shape = (float*)data;
+			break;
+		case WARPY_DECAY_TIME:
+			lv2->ports.decay_time = (float*)data;
+			break;
+		case WARPY_DECAY_SHAPE:
+			lv2->ports.decay_shape = (float*)data;
+			break;
+		case WARPY_SUSTAIN_LEVEL:
+			lv2->ports.sustain_level = (float*)data;
+			break;
+		case WARPY_RELEASE_TIME:
+			lv2->ports.release_time = (float*)data;
+			break;
+		case WARPY_RELEASE_SHAPE:
+			lv2->ports.release_shape = (float*)data;
 			break;
 		case WARPY_GAIN:
 			lv2->ports.gain = (float*)data;
@@ -121,9 +186,33 @@ static void activate(LV2_Handle instance)
 
 static void update_control_ports(struct lv2* lv2)
 {
-	update_speed(lv2->warpy,       *(lv2->ports.speed));
-	update_gain(lv2->warpy,        *(lv2->ports.gain));
-	update_center(lv2->warpy,      *(lv2->ports.center));
+	update_gain(lv2->warpy,   *(lv2->ports.gain));
+
+	struct envelope env;
+	env.attack_time   = *(lv2->ports.attack_time);
+	env.attack_shape  = *(lv2->ports.attack_shape);
+	env.decay_time    = *(lv2->ports.decay_time);
+	env.decay_shape   = *(lv2->ports.decay_shape);
+	env.sustain_level = *(lv2->ports.sustain_level);
+	env.release_time  = *(lv2->ports.release_time);
+	env.release_shape = *(lv2->ports.release_shape);
+	update_envelope(lv2->warpy, env);
+
+	struct vocoder_settings speed_settings;
+	speed_settings.type        = VOC_SPEED;
+	speed_settings.adjust      = *(lv2->ports.speed_adjust);
+	speed_settings.center      = *(lv2->ports.speed_center);
+	speed_settings.lower_scale = *(lv2->ports.speed_lower_scale);
+	speed_settings.upper_scale = *(lv2->ports.speed_upper_scale);
+	update_vocoder_settings(lv2->warpy, speed_settings);
+
+	struct vocoder_settings pitch_settings;
+	pitch_settings.type        = VOC_PITCH;
+	pitch_settings.adjust      = *(lv2->ports.pitch_adjust);
+	pitch_settings.center      = *(lv2->ports.pitch_center);
+	pitch_settings.lower_scale = *(lv2->ports.pitch_lower_scale);
+	pitch_settings.upper_scale = *(lv2->ports.pitch_upper_scale);
+	update_vocoder_settings(lv2->warpy, pitch_settings);
 }
 
 static void process_patch_set(struct lv2* lv2, const LV2_Atom_Object* obj)

@@ -46,24 +46,105 @@ instr +FileLoader
     gisampleready = 1
 endin
 
+#define NOTE_DIFF(freq'center) #$freq / cpsmidinn($center)#
+#define SCALED(diff'scale) #1 + (($diff - 1) * $scale)#
+#define VOC_MIN #0.0001#
+
 instr 1
     if gisampleready == 1 then
-        kspeed  chnget "speed"
-        kgain   chnget "gain"
-        kcenter chnget "center"
+        kgain     chnget "gain"
+        ; speed
+        kspeedadjust     chnget "speed_adjust"
+        kspeedcenter     chnget "speed_center"
+        kspeedlowerscale chnget "speed_lower_scale"
+        kspeedlowerscale = kspeedlowerscale * -1
+        kspeedupperscale chnget "speed_upper_scale"
+        ; pitch
+        kpitchadjust     chnget "pitch_adjust"
+        kpitchcenter     chnget "pitch_center"
+        kpitchlowerscale chnget "pitch_lower_scale"
+        kpitchlowerscale = kpitchlowerscale * -1
+        kpitchupperscale chnget "pitch_upper_scale"
+        ; envelope
+        ienvatt   chnget "env_attack_time"
+        ienvattsh chnget "env_attack_shape"
+        ienvdec   chnget "env_decay_time"
+        ienvdecsh chnget "env_decay_shape"
+        ienvsus   chnget "env_sustain_level"
+        ienvrel   chnget "env_release_time"
+        ienvrelsh chnget "env_release_shape"
 
         iamp  ampmidi 1
 
         imfreq cpsmidi
-        kpitch = imfreq/cpsmidinn(kcenter)
+        kspeeddiff = $NOTE_DIFF(imfreq'kspeedcenter)
+        kpitchdiff = $NOTE_DIFF(imfreq'kpitchcenter)
 
-        aenv linsegr 0, 0.01, 1, 0.01, 0
+        if kspeeddiff == 1 then
+            kspeedscaled = 1
+        else
+            if kspeeddiff > 1 then
+                if kspeedupperscale < 0 then
+                    kspeedupperscale = abs(kspeedupperscale)
+                    kspeeddiff = 1 / kspeeddiff
+                endif
+                kspeedscaled = $SCALED(kspeeddiff'kspeedupperscale)
+            else
+                if kspeedlowerscale < 0 then
+                    kspeedlowerscale = abs(kspeedlowerscale)
+                    kspeeddiff = 1 / kspeeddiff
+                endif
+                kspeedscaled = $SCALED(kspeeddiff'kspeedlowerscale)
+            endif
+        endif
+
+        if kpitchdiff == 1 then
+            kpitchscaled = 1
+        else
+            if kpitchdiff > 1 then
+                if kpitchupperscale < 0 then
+                    kpitchupperscale = abs(kpitchupperscale)
+                    kpitchdiff = 1 / kpitchdiff
+                endif
+                kpitchscaled = $SCALED(kpitchdiff'kpitchupperscale)
+            else
+                if kpitchlowerscale < 0 then
+                    kpitchlowerscale = abs(kpitchlowerscale)
+                    kpitchdiff = 1 / kpitchdiff
+                endif
+                kpitchscaled = $SCALED(kpitchdiff'kpitchlowerscale)
+            endif
+        endif
+
+        kspeedfinal = kspeedscaled * kspeedadjust
+        kpitchfinal = kpitchscaled * kpitchadjust
+
+        if kspeedfinal < $VOC_MIN then
+            kspeedfinal = $VOC_MIN
+        endif
+
+        if kpitchfinal < $VOC_MIN then
+            kpitchfinal = $VOC_MIN
+        endif
+
+        printks "speed_adjust: %f\n",  1, kspeedadjust
+        printks "speed_scaled: %f\n",  1, kspeedscaled
+        printks "speed_final: %f\n",   1, kspeedfinal
+        printks "pitch_adjust: %f\n",  1, kpitchadjust
+        printks "pitch_scaled: %f\n",  1, kpitchscaled
+        printks "pitch_final: %f\n\n", 1, kpitchfinal
+
+        aenv transegr 0,       ienvatt, ienvattsh, \
+                      1,       ienvdec, ienvdecsh, \
+                      ienvsus, ienvrel, ienvrelsh, \
+                      0
+
         if gistereo == 1 then
-            asigl temposcal kspeed, iamp*kgain, kpitch, gileftchan, 1
-            asigr temposcal kspeed, iamp*kgain, kpitch, girightchan, 1
+            asigl temposcal kspeedfinal, iamp*kgain, kpitchfinal, gileftchan, 1
+            asigr temposcal kspeedfinal, iamp*kgain, kpitchfinal, girightchan, 1
                 outs asigl*aenv, asigr*aenv
         else
-            asig temposcal kspeed, iamp*kgain, kpitch, gileftchan, 1
+            asig temposcal kspeedfinal, iamp*kgain, kpitchfinal, gileftchan, 1
                 outs asig*aenv, asig*aenv
         endif
     endif

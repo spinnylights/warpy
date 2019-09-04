@@ -41,16 +41,54 @@ void play_test(struct warpy* warpy)
 	uint64_t samples_length = length * get_channel_count(warpy);
 	float* samples = (float*)calloc(samples_length, sizeof(float));
 	int i;
+	struct envelope env;
+	env.attack_time   = 0.1;
+	env.attack_shape  = 4;
+	env.decay_time    = 0.2;
+	env.decay_shape   = -4;
+	env.sustain_level = 0.3;
+	env.release_time  = 1;
+	env.release_shape = 2;
+
+	struct vocoder_settings speed_settings_1;
+	speed_settings_1.type   = VOC_SPEED;
+	speed_settings_1.adjust = 0.5;
+	speed_settings_1.center = 68;
+	speed_settings_1.lower_scale = -2;
+	speed_settings_1.upper_scale = 1;
+
+	struct vocoder_settings speed_settings_2;
+	speed_settings_2.type   = VOC_SPEED;
+	speed_settings_2.adjust = 0.5;
+	speed_settings_2.center = 68;
+	speed_settings_2.lower_scale = 1;
+	speed_settings_2.upper_scale = -3;
+
+	struct vocoder_settings pitch_settings_1;
+	pitch_settings_1.type   = VOC_PITCH;
+	pitch_settings_1.adjust = 0.60;
+	pitch_settings_1.center = 68;
+	pitch_settings_1.lower_scale = -0.1;
+	pitch_settings_1.upper_scale = 0.4;
+
+	struct vocoder_settings pitch_settings_2;
+	pitch_settings_2.type   = VOC_PITCH;
+	pitch_settings_2.adjust = 0.3;
+	pitch_settings_2.center = 61;
+	pitch_settings_2.lower_scale = 0.1;
+	pitch_settings_2.upper_scale = 1;
+
 	for (i = 0; i < length; i++) {
 		update_gain(warpy, 0.5);
+		update_envelope(warpy, env);
 		if (i < note_length*5) {
 			update_sample_path(warpy, "kickroll.wav");
-			update_speed(warpy, 0.1);
-			update_center(warpy, 52);
+			update_vocoder_settings(warpy, speed_settings_1);
+			update_vocoder_settings(warpy, pitch_settings_1);
 		} else {
-			update_sample_path(warpy, "venezuelan_frog.wav");
-			update_speed(warpy, 1);
-			update_center(warpy, 70);
+			update_sample_path(warpy, "venezuelan_frog_cut_silence.wav");
+			update_vocoder_settings(warpy, speed_settings_2);
+			update_vocoder_settings(warpy, pitch_settings_2);
 		}
 
 		if      (i == note_length)

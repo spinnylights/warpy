@@ -21,11 +21,32 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#define VOC_SPEED 0
+#define VOC_PITCH 1
+
 struct warpy;
 
 struct audio_sample {
 	float left;
 	float right;
+};
+
+struct envelope {
+	float attack_time;
+	float attack_shape;
+	float decay_time;
+	float decay_shape;
+	float sustain_level;
+	float release_time;
+	float release_shape;
+};
+
+struct vocoder_settings {
+	int   type;
+	float adjust;
+	float center;
+	float lower_scale;
+	float upper_scale;
 };
 
 struct warpy* create_warpy(double sample_rate);
@@ -38,8 +59,10 @@ struct audio_sample gen_sample(struct warpy* warpy);
 int get_channel_count(struct warpy* warpy);
 
 void update_sample_path(struct warpy* warpy, char* path);
-void update_speed(struct warpy* warpy, double norm_speed);
+void update_vocoder_settings(struct warpy* warpy,
+                             const struct vocoder_settings settings);
 void update_gain(struct warpy* warpy, float norm_gain);
-void update_center(struct warpy* warpy, int center);
+void update_center(struct warpy* warpy, int center, const char* channel);
+void update_envelope(struct warpy* warpy, struct envelope env);
 
 #endif

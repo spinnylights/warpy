@@ -369,6 +369,16 @@ void update_sample_path(struct warpy* warpy, char* path)
 	csoundSetStringChannel(warpy->csound, "path", path);
 }
 
+#define GET_SET_CONTROL_BASE(param, channel, set_val) \
+	MYFLT current_##param =\
+	        csoundGetControlChannel(warpy->csound, channel, NULL);\
+	if (current_##param != (MYFLT)set_val)\
+		csoundSetControlChannel(warpy->csound,\
+		                        channel,\
+		                        set_val);
+
+#define GET_SET_CONTROL(param, channel) GET_SET_CONTROL_BASE(param, channel, param)
+
 struct scale {
 	const double floor;
 	const double ceil;
@@ -381,13 +391,11 @@ static const struct scale NORM_SCALE = {
 	.midpoint = 0.5
 };
 
-static MYFLT exp_scale_lower_conv(double n,
-                                  struct scale from,
-                                  struct scale to)
+static MYFLT exp_scale_lower_conv(double n)
 {
 	// 0   -> 0,    0.1 -> 0.26, 0.2 -> 0.48,
 	// 0.3 -> 0.68, 0.4 -> 0.85, 0.5 -> 1
-	double base   = pow(from.midpoint, -(1/from.midpoint));
+	double base   = pow(NORM_SCALE.midpoint, -(1/NORM_SCALE.midpoint));
 	double scaled = (1 - (pow(base,-n)));
 	return (MYFLT)(scaled * 2);
 }
@@ -410,11 +418,11 @@ static const struct scale SPEED_SCALE = {
 	.midpoint = 1
 };
 
-void update_speed(struct warpy* warpy, double norm_speed)
+static void update_speed_adjust(struct warpy* warpy, double norm_speed)
 {
 	//if (warpy->bus_args->speed == norm_speed)
 	//	return;
-	warpy->bus_args->speed = norm_speed;
+	//warpy->bus_args->speed = norm_speed;
 
 	MYFLT speed;
 	norm_speed = fabs(norm_speed);
@@ -426,9 +434,7 @@ void update_speed(struct warpy* warpy, double norm_speed)
 		speed = SPEED_SCALE.floor;
 	}
 	else if (norm_speed < NORM_SCALE.midpoint) {
-		speed = exp_scale_lower_conv(norm_speed,
-		                             NORM_SCALE,
-		                             SPEED_SCALE);
+		speed = exp_scale_lower_conv(norm_speed);
 	}
 	else if (norm_speed > NORM_SCALE.midpoint) {
 		speed = exp_scale_upper_conv(norm_speed,
@@ -439,35 +445,116 @@ void update_speed(struct warpy* warpy, double norm_speed)
 		speed = SPEED_SCALE.midpoint;
 	};
 
-	csoundSetControlChannel(warpy->csound, "speed", speed);
+	GET_SET_CONTROL(speed, "speed_adjust")
 }
 
+static const struct scale PITCH_SCALE = {
+	.floor    = 0.001,
+	.ceil     = 100,
+	.midpoint = 1
+};
+
+static double pitch_scale_upper_linear(MYFLT norm_pitch)
+{
+	double slope = 5;
+	return (slope * (norm_pitch - NORM_SCALE.midpoint)) + PITCH_SCALE.midpoint;
+}
+
+static double pitch_scale_upper_exp(MYFLT norm_pitch)
+{
+	double point_6_to_1_point_5 = 0.5711;
+	double exp = (log((double)NORM_SCALE.ceil/(double)PITCH_SCALE.ceil) /
+	             log(point_6_to_1_point_5));
+	return PITCH_SCALE.ceil * pow(norm_pitch, exp);
+}
+
+static void update_pitch_adjust(struct warpy* warpy, MYFLT norm_pitch)
+{
+	MYFLT pitch_adjust;
+	norm_pitch = fabs(norm_pitch);
+
+	if (norm_pitch > NORM_SCALE.ceil)
+		norm_pitch = NORM_SCALE.ceil;
+
+	if (norm_pitch == NORM_SCALE.floor) {
+		pitch_adjust = PITCH_SCALE.floor;
+	}
+	else if (norm_pitch < NORM_SCALE.midpoint) {
+		pitch_adjust = exp_scale_lower_conv(norm_pitch);
+	}
+	else if (norm_pitch > NORM_SCALE.midpoint) {
+		if (norm_pitch <= 0.6) {
+			pitch_adjust = pitch_scale_upper_linear(norm_pitch);
+		}
+		else {
+			pitch_adjust = pitch_scale_upper_exp(norm_pitch);
+		}
+	}
+	else {
+		pitch_adjust = PITCH_SCALE.midpoint;
+	}
+
+	GET_SET_CONTROL(pitch_adjust, "pitch_adjust")
+}
+
+#define GET_SET_VOCODER(type) \
+	update_##type##_adjust(warpy, adjust);\
+	update_center(warpy, center, #type "_center");\
+	GET_SET_CONTROL(lower_scale, #type "_lower_scale")\
+	GET_SET_CONTROL(upper_scale, #type "_upper_scale")
+
+void update_vocoder_settings(struct warpy* warpy,
+                             const struct vocoder_settings settings)
+{
+	int   type        = settings.type;
+	float adjust      = settings.adjust;
+	float center      = settings.center;
+	float lower_scale = settings.lower_scale;
+	float upper_scale = settings.upper_scale;
+
+	if (type == VOC_SPEED) {
+		GET_SET_VOCODER(speed)
+	}
+	else if (type == VOC_PITCH) {
+		GET_SET_VOCODER(pitch)
+	}
+}
 
 void update_gain(struct warpy* warpy, float norm_gain)
 {
 	//if (warpy->bus_args->gain == norm_gain)
 	//	return;
-	warpy->bus_args->gain = norm_gain;
+	//warpy->bus_args->gain = norm_gain;
 	norm_gain = fabs(norm_gain);
 	if (norm_gain > 1) norm_gain = 1;
 	MYFLT gain = (MYFLT)norm_gain * 2;
 
-	csoundSetControlChannel(warpy->csound, "gain", gain);
+	GET_SET_CONTROL(gain, "gain")
 }
 
-void update_center(struct warpy* warpy, int center)
+void update_center(struct warpy* warpy, int center, const char* channel)
 {
 	//if (warpy->bus_args->center == center)
 	//	return;
-	warpy->bus_args->center = center;
+	//warpy->bus_args->center = center;
 
 	if (center < 0)
 		center = 0;
 	if (center > 127)
 		center = 127;
 
-	MYFLT current_center =
-		csoundGetControlChannel(warpy->csound, "center", NULL);
-	if (current_center != (MYFLT)center)
-		csoundSetControlChannel(warpy->csound, "center", center);
+	GET_SET_CONTROL(center, channel)
+}
+
+#define SET_ENVELOPE(param) GET_SET_CONTROL_BASE(param, "env_" #param, env.param)
+
+void update_envelope(struct warpy* warpy, struct envelope env)
+{
+	SET_ENVELOPE(attack_time)
+	SET_ENVELOPE(attack_shape)
+	SET_ENVELOPE(decay_time)
+	SET_ENVELOPE(decay_shape)
+	SET_ENVELOPE(sustain_level)
+	SET_ENVELOPE(release_time)
+	SET_ENVELOPE(release_shape)
 }
