@@ -22,12 +22,37 @@
 #include <math.h>
 #include <unistd.h>
 #include <csound/csound.h>
+//#include <sox.h>
 
 #include "warpy.h"
 
 #define CONTROL_PERIOD_FRAMES 64
 #define MIDI_MESSAGE_BUFFER_SIZE 4096
 #define MIDI_CACHE_LENGTH 256
+
+struct scale {
+	const double floor;
+	const double ceil;
+	const double midpoint;
+};
+
+static const struct scale NORM_SCALE = {
+	.floor    = 0,
+	.ceil     = 1,
+	.midpoint = 0.5
+};
+
+static const struct scale SPEED_SCALE = {
+	.floor    = 0.001,
+	.ceil     = 50,
+	.midpoint = 1
+};
+
+static const struct scale PITCH_SCALE = {
+	.floor    = 0.001,
+	.ceil     = 100,
+	.midpoint = 1
+};
 
 static const char WARPY_ORC[] = {
 	#include "warpy.orc.xxd"
@@ -80,15 +105,22 @@ static struct audio_sample* create_audio_sample(void)
 	return audio_sample;
 }
 
-struct bus_args {
-	double speed;
-	float gain;
-	int center;
+struct cache {
+	uint32_t path_int;
+	MYFLT speed_adjust;
+	MYFLT pitch_adjust;
+	MYFLT gain;
+	MYFLT center;
 };
 
-static struct bus_args* create_bus_args(void)
+struct cache* create_cache(void)
 {
-	return calloc(1, sizeof(struct bus_args));
+	struct cache* cache = (struct cache*)calloc(1, sizeof(struct cache));
+	cache->speed_adjust = SPEED_SCALE.midpoint;
+	cache->pitch_adjust = PITCH_SCALE.midpoint;
+	cache->gain = 1;
+	cache->center = 60;
+	return cache;
 }
 
 struct warpy {
@@ -98,11 +130,11 @@ struct warpy {
 	struct midi_message_buffer* midi_message_buffer;
 	bool* midi_cache;
 	struct audio_sample* audio_sample;
-	struct bus_args* bus_args;
 	CSOUND_PARAMS* params;
 	uint32_t control_period_frames;
 	uint32_t audio_buffer_pos;
 	bool never_run;
+	struct cache* cache;
 };
 
 struct warpy* create_warpy(double sample_rate)
@@ -112,12 +144,12 @@ struct warpy* create_warpy(double sample_rate)
 	warpy->midi_message_buffer = create_midi_message_buffer();
 	warpy->midi_cache = (bool*)calloc(MIDI_CACHE_LENGTH, sizeof(bool));
 	warpy->audio_sample = create_audio_sample();
-	warpy->bus_args = create_bus_args();
 	int channels = 2;
 	warpy->channels = channels;
 	warpy->control_period_frames = CONTROL_PERIOD_FRAMES;
 	warpy->audio_buffer_pos = 0;
 	warpy->never_run = true;
+	warpy->cache = create_cache();
 	warpy->csound = csoundCreate(warpy);
 	warpy->params = (CSOUND_PARAMS*)malloc(sizeof(CSOUND_PARAMS));
 	return warpy;
@@ -352,7 +384,6 @@ void destroy_warpy(struct warpy* warpy)
 	csoundDestroy(warpy->csound);
 	destroy_midi_message_buffer(warpy->midi_message_buffer);
 	free(warpy->audio_sample);
-	free(warpy->bus_args);
 	free(warpy->params);
 	free(warpy);
 }
@@ -362,11 +393,57 @@ int get_channel_count(struct warpy* warpy)
 	return warpy->channels;
 }
 
+#define PATH_CHANNEL "path"
+
 void update_sample_path(struct warpy* warpy, char* path)
 {
-	// it's actually faster to just set the channel every frame than it
-	// is to check if setting it is redundant
-	csoundSetStringChannel(warpy->csound, "path", path);
+	uint64_t i = 0;
+	char current = path[i];
+	uint32_t path_int = 0;
+	while (current != '\0'){
+		path_int += current;
+		if (path_int > UINT32_MAX) {
+			path_int = UINT32_MAX;
+			fprintf(stderr,
+				"WARN: saturating int conversion of %s at %d\n",
+				path,
+				UINT32_MAX);
+			break;
+		}
+		current = path[i++];
+	}
+
+	if (warpy->cache->path_int == path_int)
+		return;
+	else {
+		int64_t cs_path_size =
+		        csoundGetChannelDatasize(warpy->csound, PATH_CHANNEL);
+		if (cs_path_size) {
+			char cs_path[cs_path_size];
+			csoundGetStringChannel(warpy->csound, PATH_CHANNEL, cs_path);
+			if (!strcmp(path, cs_path)) {
+				warpy->cache->path_int = path_int;
+				return;
+			}
+		}
+	}
+
+	//sox_format_t* header = sox_open_read(path, NULL, NULL, NULL);
+	//if (!header) {
+	//	fprintf(stderr, "Unable to read from %s\n", path);
+	//	return;
+	//}
+	//unsigned channels = header->signal.channels;
+	//if (channels < 1)
+	//	channels = 1;
+	//sox_rate_t sample_rate = header->signal.rate;
+	//if (sample_rate < 1)
+	//	sample_rate = 1;
+	//uint64_t frames = header->signal.length / channels;
+	//double length_in_secs = (double)frames / frames;
+
+	//csoundSetControlChannel(warpy->csound, "sample_dur", length_in_secs);
+	csoundSetStringChannel(warpy->csound, PATH_CHANNEL, path);
 }
 
 #define GET_SET_CONTROL_BASE(param, channel, set_val) \
@@ -379,17 +456,18 @@ void update_sample_path(struct warpy* warpy, char* path)
 
 #define GET_SET_CONTROL(param, channel) GET_SET_CONTROL_BASE(param, channel, param)
 
-struct scale {
-	const double floor;
-	const double ceil;
-	const double midpoint;
-};
+#define CHECK_CURRENT_CHANNEL(cache_param, channel_name) \
+	MYFLT cs_##cache_param = csoundGetControlChannel(warpy->csound,\
+	                                                 channel_name,\
+	                                                 NULL);\
+	if (warpy->cache->cache_param == cs_##cache_param)\
+		return;
 
-static const struct scale NORM_SCALE = {
-	.floor    = 0,
-	.ceil     = 1,
-	.midpoint = 0.5
-};
+#define SET_CHANNEL_OR_CACHE(cache_param, channel_name) \
+	if (cs_##cache_param != cache_param)\
+		csoundSetControlChannel(warpy->csound, channel_name, cache_param);\
+	else\
+		warpy->cache->cache_param = cache_param;
 
 static MYFLT exp_scale_lower_conv(double n)
 {
@@ -412,47 +490,35 @@ static MYFLT exp_scale_upper_conv(double n,
 	return (MYFLT)result;
 }
 
-static const struct scale SPEED_SCALE = {
-	.floor    = 0.001,
-	.ceil     = 50,
-	.midpoint = 1
-};
+#define SPEED_CHANNEL "speed_adjust"
 
 static void update_speed_adjust(struct warpy* warpy, double norm_speed)
 {
-	//if (warpy->bus_args->speed == norm_speed)
-	//	return;
-	//warpy->bus_args->speed = norm_speed;
+	CHECK_CURRENT_CHANNEL(speed_adjust, SPEED_CHANNEL)
 
-	MYFLT speed;
+	MYFLT speed_adjust;
 	norm_speed = fabs(norm_speed);
 
 	if (norm_speed > NORM_SCALE.ceil)
 		norm_speed = NORM_SCALE.ceil;
 
 	if (norm_speed == NORM_SCALE.floor) {
-		speed = SPEED_SCALE.floor;
+		speed_adjust = SPEED_SCALE.floor;
 	}
 	else if (norm_speed < NORM_SCALE.midpoint) {
-		speed = exp_scale_lower_conv(norm_speed);
+		speed_adjust = exp_scale_lower_conv(norm_speed);
 	}
 	else if (norm_speed > NORM_SCALE.midpoint) {
-		speed = exp_scale_upper_conv(norm_speed,
+		speed_adjust = exp_scale_upper_conv(norm_speed,
 		                             NORM_SCALE,
 		                             SPEED_SCALE);
 	}
 	else {
-		speed = SPEED_SCALE.midpoint;
+		speed_adjust = SPEED_SCALE.midpoint;
 	};
 
-	GET_SET_CONTROL(speed, "speed_adjust")
+	SET_CHANNEL_OR_CACHE(speed_adjust, SPEED_CHANNEL)
 }
-
-static const struct scale PITCH_SCALE = {
-	.floor    = 0.001,
-	.ceil     = 100,
-	.midpoint = 1
-};
 
 static double pitch_scale_upper_linear(MYFLT norm_pitch)
 {
@@ -468,8 +534,12 @@ static double pitch_scale_upper_exp(MYFLT norm_pitch)
 	return PITCH_SCALE.ceil * pow(norm_pitch, exp);
 }
 
+#define PITCH_CHANNEL "pitch_adjust"
+
 static void update_pitch_adjust(struct warpy* warpy, MYFLT norm_pitch)
 {
+	CHECK_CURRENT_CHANNEL(pitch_adjust, PITCH_CHANNEL)
+
 	MYFLT pitch_adjust;
 	norm_pitch = fabs(norm_pitch);
 
@@ -494,7 +564,7 @@ static void update_pitch_adjust(struct warpy* warpy, MYFLT norm_pitch)
 		pitch_adjust = PITCH_SCALE.midpoint;
 	}
 
-	GET_SET_CONTROL(pitch_adjust, "pitch_adjust")
+	SET_CHANNEL_OR_CACHE(pitch_adjust, PITCH_CHANNEL)
 }
 
 #define GET_SET_VOCODER(type) \
@@ -520,30 +590,29 @@ void update_vocoder_settings(struct warpy* warpy,
 	}
 }
 
+#define GAIN_CHANNEL "gain"
+
 void update_gain(struct warpy* warpy, float norm_gain)
 {
-	//if (warpy->bus_args->gain == norm_gain)
-	//	return;
-	//warpy->bus_args->gain = norm_gain;
+	CHECK_CURRENT_CHANNEL(gain, GAIN_CHANNEL)
+
 	norm_gain = fabs(norm_gain);
 	if (norm_gain > 1) norm_gain = 1;
 	MYFLT gain = (MYFLT)norm_gain * 2;
 
-	GET_SET_CONTROL(gain, "gain")
+	SET_CHANNEL_OR_CACHE(gain, GAIN_CHANNEL)
 }
 
 void update_center(struct warpy* warpy, int center, const char* channel)
 {
-	//if (warpy->bus_args->center == center)
-	//	return;
-	//warpy->bus_args->center = center;
+	CHECK_CURRENT_CHANNEL(center, channel)
 
 	if (center < 0)
 		center = 0;
 	if (center > 127)
 		center = 127;
 
-	GET_SET_CONTROL(center, channel)
+	SET_CHANNEL_OR_CACHE(center, channel)
 }
 
 #define SET_ENVELOPE(param) GET_SET_CONTROL_BASE(param, "env_" #param, env.param)
