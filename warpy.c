@@ -22,7 +22,7 @@
 #include <math.h>
 #include <unistd.h>
 #include <csound/csound.h>
-//#include <sox.h>
+#include <sox.h>
 
 #include "warpy.h"
 
@@ -236,12 +236,8 @@ static int read_midi_data(CSOUND* csound,
 		if (size && !midi_cache_get(warpy,
 		                            message.raw_message,
 		                            message.size)) {
-			puts("midi message:\n");
-			for (uint32_t i = 0; i < size; i++) {
-				printf("    %x", message.raw_message[i]);
+			for (uint32_t i = 0; i < size; i++)
 				*buffer++ = message.raw_message[i];
-			}
-			puts("\n");
 			midi_cache_set(warpy,
 			               message.raw_message,
 			               message.size);
@@ -395,6 +391,25 @@ int get_channel_count(struct warpy* warpy)
 
 #define PATH_CHANNEL "path"
 
+void update_sample_dur(struct warpy* warpy, const char* path)
+{
+	sox_format_t* header = sox_open_read(path, NULL, NULL, NULL);
+	if (!header) {
+		fprintf(stderr, "Unable to read from %s\n", path);
+		return;
+	}
+	unsigned channels = header->signal.channels;
+	if (channels < 1)
+		channels = 1;
+	sox_rate_t sample_rate = header->signal.rate;
+	if (sample_rate < 1)
+		sample_rate = 1;
+	uint64_t frames = header->signal.length / channels;
+	double length_in_secs = (double)frames / sample_rate;
+
+	csoundSetControlChannel(warpy->csound, "sample_dur", length_in_secs);
+}
+
 void update_sample_path(struct warpy* warpy, char* path)
 {
 	uint64_t i = 0;
@@ -428,21 +443,7 @@ void update_sample_path(struct warpy* warpy, char* path)
 		}
 	}
 
-	//sox_format_t* header = sox_open_read(path, NULL, NULL, NULL);
-	//if (!header) {
-	//	fprintf(stderr, "Unable to read from %s\n", path);
-	//	return;
-	//}
-	//unsigned channels = header->signal.channels;
-	//if (channels < 1)
-	//	channels = 1;
-	//sox_rate_t sample_rate = header->signal.rate;
-	//if (sample_rate < 1)
-	//	sample_rate = 1;
-	//uint64_t frames = header->signal.length / channels;
-	//double length_in_secs = (double)frames / frames;
-
-	//csoundSetControlChannel(warpy->csound, "sample_dur", length_in_secs);
+	update_sample_dur(warpy, path);
 	csoundSetStringChannel(warpy->csound, PATH_CHANNEL, path);
 }
 

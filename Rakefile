@@ -26,6 +26,7 @@ FLAGS = %w(
 LIB_FLAGS = %w(
   -lm
   /usr/lib/libcsound64.so
+  /usr/lib/libsox.so
   test/tinywav/tinywav.so
 ).join(' ')
 ORC_INFILE = 'warpy.orc'

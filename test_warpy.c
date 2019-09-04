@@ -66,7 +66,7 @@ void play_test(struct warpy* warpy)
 
 	struct vocoder_settings pitch_settings_1;
 	pitch_settings_1.type   = VOC_PITCH;
-	pitch_settings_1.adjust = 0.60;
+	pitch_settings_1.adjust = 0.6;
 	pitch_settings_1.center = 68;
 	pitch_settings_1.lower_scale = -0.1;
 	pitch_settings_1.upper_scale = 0.4;

@@ -21,6 +21,7 @@ gistereo init 0
 gisampleready init 0
 gkfirstrun init 1
 gSpath init ""
+gisampledur init 0
 
 instr PathGetter
     gSpath chnget "path"
@@ -43,6 +44,7 @@ instr +FileLoader
     if gistereo == 1 then
         girightchan ftgen 2, 0, 0, 1, gSpath, 0, 0, 2
     endif
+    gisampledur chnget "sample_dur"
     gisampleready = 1
 endin
 
@@ -126,13 +128,6 @@ instr 1
         if kpitchfinal < $VOC_MIN then
             kpitchfinal = $VOC_MIN
         endif
-
-        printks "speed_adjust: %f\n",  1, kspeedadjust
-        printks "speed_scaled: %f\n",  1, kspeedscaled
-        printks "speed_final: %f\n",   1, kspeedfinal
-        printks "pitch_adjust: %f\n",  1, kpitchadjust
-        printks "pitch_scaled: %f\n",  1, kpitchscaled
-        printks "pitch_final: %f\n\n", 1, kpitchfinal
 
         aenv transegr 0,       ienvatt, ienvattsh, \
                       1,       ienvdec, ienvdecsh, \
