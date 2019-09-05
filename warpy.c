@@ -406,6 +406,7 @@ void update_sample_dur(struct warpy* warpy, const char* path)
 		sample_rate = 1;
 	uint64_t frames = header->signal.length / channels;
 	double length_in_secs = (double)frames / sample_rate;
+	sox_close(header);
 
 	csoundSetControlChannel(warpy->csound, "sample_dur", length_in_secs);
 }
