@@ -105,21 +105,187 @@ static struct audio_sample* create_audio_sample(void)
 	return audio_sample;
 }
 
+struct param {
+	MYFLT (*calc)(float);
+	const char* channel;
+	float arg;
+	MYFLT result;
+	bool is_cs_current;
+};
+
+struct param* create_param(MYFLT (*calc)(float), const char* channel)
+{
+	struct param* param = (struct param*)malloc(sizeof(struct param));
+	param->calc = calc;
+	param->channel = channel;
+	param->arg = -100;
+	param->result = -100;
+	param->is_cs_current = false;
+	return param;
+}
+
+static MYFLT exp_scale_lower_conv(double n)
+{
+	// 0   -> 0,    0.1 -> 0.26, 0.2 -> 0.48,
+	// 0.3 -> 0.68, 0.4 -> 0.85, 0.5 -> 1
+	double base   = pow(NORM_SCALE.midpoint, -(1/NORM_SCALE.midpoint));
+	double scaled = (1 - (pow(base,-n)));
+	return (MYFLT)(scaled * 2);
+}
+
+static MYFLT exp_scale_upper_conv(double n,
+                                  struct scale from,
+                                  struct scale to)
+{
+	// 0.5 ->  1,    0.6 ->  2.80, 0.7 ->  6.68,
+	// 0.8 -> 14.19, 0.4 -> 27.59, 0.5 -> 50
+	if (from.midpoint == 0) return (MYFLT)to.midpoint;
+	double exp    = log(1/to.ceil) / log(from.midpoint);
+	double result = to.ceil * pow(n,exp);
+	return (MYFLT)result;
+}
+
+static MYFLT calc_speed_adjust(float norm_speed)
+{
+	MYFLT speed_adjust;
+	norm_speed = fabs(norm_speed);
+
+	if (norm_speed > NORM_SCALE.ceil)
+		norm_speed = NORM_SCALE.ceil;
+
+	if (norm_speed == NORM_SCALE.floor) {
+		speed_adjust = SPEED_SCALE.floor;
+	}
+	else if (norm_speed < NORM_SCALE.midpoint) {
+		speed_adjust = exp_scale_lower_conv(norm_speed);
+	}
+	else if (norm_speed > NORM_SCALE.midpoint) {
+		speed_adjust = exp_scale_upper_conv(norm_speed,
+		                             NORM_SCALE,
+		                             SPEED_SCALE);
+	}
+	else {
+		speed_adjust = SPEED_SCALE.midpoint;
+	};
+
+	return speed_adjust;
+}
+
+static double pitch_scale_upper_linear(MYFLT norm_pitch)
+{
+	double slope = 5;
+	return (slope * (norm_pitch - NORM_SCALE.midpoint)) + PITCH_SCALE.midpoint;
+}
+
+static double pitch_scale_upper_exp(MYFLT norm_pitch)
+{
+	double point_6_to_1_point_5 = 0.5711;
+	double exp = (log((double)NORM_SCALE.ceil/(double)PITCH_SCALE.ceil) /
+	             log(point_6_to_1_point_5));
+	return PITCH_SCALE.ceil * pow(norm_pitch, exp);
+}
+
+static MYFLT calc_pitch_adjust(float norm_pitch)
+{
+	MYFLT pitch_adjust;
+	norm_pitch = fabs(norm_pitch);
+
+	if (norm_pitch > NORM_SCALE.ceil)
+		norm_pitch = NORM_SCALE.ceil;
+
+	if (norm_pitch == NORM_SCALE.floor) {
+		pitch_adjust = PITCH_SCALE.floor;
+	}
+	else if (norm_pitch < NORM_SCALE.midpoint) {
+		pitch_adjust = exp_scale_lower_conv(norm_pitch);
+	}
+	else if (norm_pitch > NORM_SCALE.midpoint) {
+		if (norm_pitch <= 0.6) {
+			pitch_adjust = pitch_scale_upper_linear(norm_pitch);
+		}
+		else {
+			pitch_adjust = pitch_scale_upper_exp(norm_pitch);
+		}
+	}
+	else {
+		pitch_adjust = PITCH_SCALE.midpoint;
+	}
+
+	return pitch_adjust;
+}
+
+static MYFLT calc_gain(float norm_gain)
+{
+	norm_gain = fabs(norm_gain);
+	if (norm_gain > 1) norm_gain = 1;
+	return (MYFLT)norm_gain * 2;
+}
+
+static MYFLT check_midi_note_range(float center_arg)
+{
+	MYFLT center = center_arg;
+	if (center < 0)
+		center = 0;
+	if (center > 127)
+		center = 127;
+	return center;
+}
+
+static MYFLT check_scale_range(float scale_arg)
+{
+	MYFLT scale = scale_arg;
+	if (scale < -4)
+		scale = -4;
+	if (scale > 4)
+		scale = 4;
+	return scale;
+}
+
 struct cache {
 	uint32_t path_int;
-	MYFLT speed_adjust;
-	MYFLT pitch_adjust;
-	MYFLT gain;
-	MYFLT center;
+	struct param* gain;
+	struct param* speed_adjust;
+	struct param* speed_center;
+	struct param* speed_lower_scale;
+	struct param* speed_upper_scale;
+	struct param* pitch_adjust;
+	struct param* pitch_center;
+	struct param* pitch_lower_scale;
+	struct param* pitch_upper_scale;
+	struct param* env_attack_time;
+	struct param* env_attack_shape;
+	struct param* env_decay_time;
+	struct param* env_decay_shape;
+	struct param* env_sustain_level;
+	struct param* env_release_time;
+	struct param* env_release_shape;
 };
 
 struct cache* create_cache(void)
 {
 	struct cache* cache = (struct cache*)calloc(1, sizeof(struct cache));
-	cache->speed_adjust = SPEED_SCALE.midpoint;
-	cache->pitch_adjust = PITCH_SCALE.midpoint;
-	cache->gain = 1;
-	cache->center = 60;
+	cache->speed_adjust = create_param(&calc_speed_adjust, "speed_adjust");
+	cache->speed_center = create_param(&check_scale_range,
+	                                   "speed_center");
+	cache->speed_lower_scale = create_param(&check_scale_range,
+	                                        "speed_lower_scale");
+	cache->speed_upper_scale = create_param(&check_midi_note_range,
+	                                        "speed_upper_scale");
+	cache->pitch_adjust = create_param(&calc_pitch_adjust, "pitch_adjust");
+	cache->pitch_center = create_param(&check_midi_note_range,
+	                                   "pitch_center");
+	cache->pitch_lower_scale = create_param(&check_scale_range,
+	                                        "pitch_lower_scale");
+	cache->pitch_upper_scale = create_param(&check_scale_range,
+	                                        "pitch_upper_scale");
+	cache->gain = create_param(&calc_gain, "gain");
+	cache->env_attack_time   = create_param(NULL, "env_attack_time");
+	cache->env_attack_shape  = create_param(NULL, "env_attack_shape");
+	cache->env_decay_time    = create_param(NULL, "env_decay_time");
+	cache->env_decay_shape   = create_param(NULL, "env_decay_shape");
+	cache->env_sustain_level = create_param(NULL, "env_sustain_level");
+	cache->env_release_time  = create_param(NULL, "env_release_time");
+	cache->env_release_shape = create_param(NULL, "env_release_shape");
 	return cache;
 }
 
@@ -153,6 +319,33 @@ struct warpy* create_warpy(double sample_rate)
 	warpy->csound = csoundCreate(warpy);
 	warpy->params = (CSOUND_PARAMS*)malloc(sizeof(CSOUND_PARAMS));
 	return warpy;
+}
+
+void update_against_cache(struct warpy* warpy,
+                          struct param* param,
+                          float new_arg)
+{
+	if (!(param->arg == new_arg)) {
+		param->arg = new_arg;
+		if (param->calc)
+			param->result = param->calc(new_arg);
+		else
+			param->result = new_arg;
+		param->is_cs_current = false;
+	}
+
+	if (!param->is_cs_current) {
+		MYFLT cs_current_val =
+			csoundGetControlChannel(warpy->csound,
+			                        param->channel,
+			                        NULL);
+		if (param->result == cs_current_val)
+			param->is_cs_current = true;
+		else
+			csoundSetControlChannel(warpy->csound,
+			                        param->channel,
+			                        param->result);
+	}
 }
 
 static bool ensure_status(const int status,
@@ -448,132 +641,15 @@ void update_sample_path(struct warpy* warpy, char* path)
 	csoundSetStringChannel(warpy->csound, PATH_CHANNEL, path);
 }
 
-#define GET_SET_CONTROL_BASE(param, channel, set_val) \
-	MYFLT current_##param =\
-	        csoundGetControlChannel(warpy->csound, channel, NULL);\
-	if (current_##param != (MYFLT)set_val)\
-		csoundSetControlChannel(warpy->csound,\
-		                        channel,\
-		                        set_val);
-
-#define GET_SET_CONTROL(param, channel) GET_SET_CONTROL_BASE(param, channel, param)
-
-#define CHECK_CURRENT_CHANNEL(cache_param, channel_name) \
-	MYFLT cs_##cache_param = csoundGetControlChannel(warpy->csound,\
-	                                                 channel_name,\
-	                                                 NULL);\
-	if (warpy->cache->cache_param == cs_##cache_param)\
-		return;
-
-#define SET_CHANNEL_OR_CACHE(cache_param, channel_name) \
-	if (cs_##cache_param != cache_param)\
-		csoundSetControlChannel(warpy->csound, channel_name, cache_param);\
-	else\
-		warpy->cache->cache_param = cache_param;
-
-static MYFLT exp_scale_lower_conv(double n)
-{
-	// 0   -> 0,    0.1 -> 0.26, 0.2 -> 0.48,
-	// 0.3 -> 0.68, 0.4 -> 0.85, 0.5 -> 1
-	double base   = pow(NORM_SCALE.midpoint, -(1/NORM_SCALE.midpoint));
-	double scaled = (1 - (pow(base,-n)));
-	return (MYFLT)(scaled * 2);
-}
-
-static MYFLT exp_scale_upper_conv(double n,
-                                  struct scale from,
-                                  struct scale to)
-{
-	// 0.5 ->  1,    0.6 ->  2.80, 0.7 ->  6.68,
-	// 0.8 -> 14.19, 0.4 -> 27.59, 0.5 -> 50
-	if (from.midpoint == 0) return (MYFLT)to.midpoint;
-	double exp    = log(1/to.ceil) / log(from.midpoint);
-	double result = to.ceil * pow(n,exp);
-	return (MYFLT)result;
-}
-
-#define SPEED_CHANNEL "speed_adjust"
-
 static void update_speed_adjust(struct warpy* warpy, double norm_speed)
 {
-	CHECK_CURRENT_CHANNEL(speed_adjust, SPEED_CHANNEL)
-
-	MYFLT speed_adjust;
-	norm_speed = fabs(norm_speed);
-
-	if (norm_speed > NORM_SCALE.ceil)
-		norm_speed = NORM_SCALE.ceil;
-
-	if (norm_speed == NORM_SCALE.floor) {
-		speed_adjust = SPEED_SCALE.floor;
-	}
-	else if (norm_speed < NORM_SCALE.midpoint) {
-		speed_adjust = exp_scale_lower_conv(norm_speed);
-	}
-	else if (norm_speed > NORM_SCALE.midpoint) {
-		speed_adjust = exp_scale_upper_conv(norm_speed,
-		                             NORM_SCALE,
-		                             SPEED_SCALE);
-	}
-	else {
-		speed_adjust = SPEED_SCALE.midpoint;
-	};
-
-	SET_CHANNEL_OR_CACHE(speed_adjust, SPEED_CHANNEL)
+	update_against_cache(warpy, warpy->cache->speed_adjust, norm_speed);
 }
-
-static double pitch_scale_upper_linear(MYFLT norm_pitch)
-{
-	double slope = 5;
-	return (slope * (norm_pitch - NORM_SCALE.midpoint)) + PITCH_SCALE.midpoint;
-}
-
-static double pitch_scale_upper_exp(MYFLT norm_pitch)
-{
-	double point_6_to_1_point_5 = 0.5711;
-	double exp = (log((double)NORM_SCALE.ceil/(double)PITCH_SCALE.ceil) /
-	             log(point_6_to_1_point_5));
-	return PITCH_SCALE.ceil * pow(norm_pitch, exp);
-}
-
-#define PITCH_CHANNEL "pitch_adjust"
 
 static void update_pitch_adjust(struct warpy* warpy, MYFLT norm_pitch)
 {
-	CHECK_CURRENT_CHANNEL(pitch_adjust, PITCH_CHANNEL)
-
-	MYFLT pitch_adjust;
-	norm_pitch = fabs(norm_pitch);
-
-	if (norm_pitch > NORM_SCALE.ceil)
-		norm_pitch = NORM_SCALE.ceil;
-
-	if (norm_pitch == NORM_SCALE.floor) {
-		pitch_adjust = PITCH_SCALE.floor;
-	}
-	else if (norm_pitch < NORM_SCALE.midpoint) {
-		pitch_adjust = exp_scale_lower_conv(norm_pitch);
-	}
-	else if (norm_pitch > NORM_SCALE.midpoint) {
-		if (norm_pitch <= 0.6) {
-			pitch_adjust = pitch_scale_upper_linear(norm_pitch);
-		}
-		else {
-			pitch_adjust = pitch_scale_upper_exp(norm_pitch);
-		}
-	}
-	else {
-		pitch_adjust = PITCH_SCALE.midpoint;
-	}
-
-	SET_CHANNEL_OR_CACHE(pitch_adjust, PITCH_CHANNEL)
+	update_against_cache(warpy, warpy->cache->pitch_adjust, norm_pitch);
 }
-
-#define GET_SET_VOCODER(type) \
-	update_##type##_adjust(warpy, adjust);\
-	update_center(warpy, center, #type "_center");\
-	GET_SET_CONTROL(lower_scale, #type "_lower_scale")\
-	GET_SET_CONTROL(upper_scale, #type "_upper_scale")
 
 void update_vocoder_settings(struct warpy* warpy,
                              const struct vocoder_settings settings)
@@ -585,47 +661,65 @@ void update_vocoder_settings(struct warpy* warpy,
 	float upper_scale = settings.upper_scale;
 
 	if (type == VOC_SPEED) {
-		GET_SET_VOCODER(speed)
+		update_speed_adjust(warpy, adjust);
+		update_center(warpy, center, VOC_SPEED);
+		update_against_cache(warpy,
+		                     warpy->cache->speed_lower_scale,
+		                     lower_scale);
+		update_against_cache(warpy,
+		                     warpy->cache->speed_upper_scale,
+		                     upper_scale);
 	}
 	else if (type == VOC_PITCH) {
-		GET_SET_VOCODER(pitch)
+		update_pitch_adjust(warpy, adjust);
+		update_center(warpy, center, VOC_PITCH);
+		update_against_cache(warpy,
+		                     warpy->cache->pitch_lower_scale,
+		                     lower_scale);
+		update_against_cache(warpy,
+		                     warpy->cache->pitch_upper_scale,
+		                     upper_scale);
 	}
 }
-
-#define GAIN_CHANNEL "gain"
 
 void update_gain(struct warpy* warpy, float norm_gain)
 {
-	CHECK_CURRENT_CHANNEL(gain, GAIN_CHANNEL)
-
-	norm_gain = fabs(norm_gain);
-	if (norm_gain > 1) norm_gain = 1;
-	MYFLT gain = (MYFLT)norm_gain * 2;
-
-	SET_CHANNEL_OR_CACHE(gain, GAIN_CHANNEL)
+	update_against_cache(warpy, warpy->cache->gain, norm_gain);
 }
 
-void update_center(struct warpy* warpy, int center, const char* channel)
+void update_center(struct warpy* warpy, int center, int voc_param)
 {
-	CHECK_CURRENT_CHANNEL(center, channel)
-
-	if (center < 0)
-		center = 0;
-	if (center > 127)
-		center = 127;
-
-	SET_CHANNEL_OR_CACHE(center, channel)
+	if (voc_param == VOC_SPEED)
+		update_against_cache(warpy,
+		                     warpy->cache->speed_center,
+		                     center);
+	else if (voc_param == VOC_PITCH)
+		update_against_cache(warpy,
+		                     warpy->cache->pitch_center,
+		                     center);
 }
-
-#define SET_ENVELOPE(param) GET_SET_CONTROL_BASE(param, "env_" #param, env.param)
 
 void update_envelope(struct warpy* warpy, struct envelope env)
 {
-	SET_ENVELOPE(attack_time)
-	SET_ENVELOPE(attack_shape)
-	SET_ENVELOPE(decay_time)
-	SET_ENVELOPE(decay_shape)
-	SET_ENVELOPE(sustain_level)
-	SET_ENVELOPE(release_time)
-	SET_ENVELOPE(release_shape)
+	update_against_cache(warpy,
+	                     warpy->cache->env_attack_time,
+	                     env.attack_time);
+	update_against_cache(warpy,
+	                     warpy->cache->env_attack_shape,
+	                     env.attack_shape);
+	update_against_cache(warpy,
+	                     warpy->cache->env_decay_time,
+	                     env.decay_time);
+	update_against_cache(warpy,
+	                     warpy->cache->env_decay_shape,
+	                     env.decay_shape);
+	update_against_cache(warpy,
+	                     warpy->cache->env_sustain_level,
+	                     env.sustain_level);
+	update_against_cache(warpy,
+	                     warpy->cache->env_release_time,
+	                     env.release_time);
+	update_against_cache(warpy,
+	                     warpy->cache->env_release_shape,
+	                     env.release_shape);
 }

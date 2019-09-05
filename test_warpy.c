@@ -52,40 +52,48 @@ void play_test(struct warpy* warpy)
 
 	struct vocoder_settings speed_settings_1;
 	speed_settings_1.type   = VOC_SPEED;
-	speed_settings_1.adjust = 0.5;
-	speed_settings_1.center = 68;
-	speed_settings_1.lower_scale = -2;
-	speed_settings_1.upper_scale = 1;
+	speed_settings_1.adjust = 0.4;
+	speed_settings_1.center = 60;
+	speed_settings_1.lower_scale = 0;
+	speed_settings_1.upper_scale = 0;
 
 	struct vocoder_settings speed_settings_2;
 	speed_settings_2.type   = VOC_SPEED;
-	speed_settings_2.adjust = 0.5;
-	speed_settings_2.center = 68;
-	speed_settings_2.lower_scale = 1;
-	speed_settings_2.upper_scale = -3;
+	speed_settings_2.adjust = 0.1;
+	speed_settings_2.center = 60;
+	speed_settings_2.lower_scale = 0;
+	speed_settings_2.upper_scale = 0;
 
 	struct vocoder_settings pitch_settings_1;
 	pitch_settings_1.type   = VOC_PITCH;
-	pitch_settings_1.adjust = 0.6;
-	pitch_settings_1.center = 68;
-	pitch_settings_1.lower_scale = -0.1;
-	pitch_settings_1.upper_scale = 0.4;
+	pitch_settings_1.adjust = 0.5;
+	pitch_settings_1.center = 0;
+	pitch_settings_1.lower_scale = -4;
+	pitch_settings_1.upper_scale = 4;
 
 	struct vocoder_settings pitch_settings_2;
 	pitch_settings_2.type   = VOC_PITCH;
 	pitch_settings_2.adjust = 0.3;
-	pitch_settings_2.center = 61;
-	pitch_settings_2.lower_scale = 0.1;
-	pitch_settings_2.upper_scale = 1;
+	pitch_settings_2.center = 60;
+	pitch_settings_2.lower_scale = 0;
+	pitch_settings_2.upper_scale = 0;
 
 	for (i = 0; i < length; i++) {
-		update_gain(warpy, 0.5);
 		update_envelope(warpy, env);
-		if (i < note_length*5) {
+		if ((double)i < (double)note_length*5.9) {
+			update_gain(warpy, 0.3);
 			update_sample_path(warpy, "kickroll.wav");
 			update_vocoder_settings(warpy, speed_settings_1);
 			update_vocoder_settings(warpy, pitch_settings_1);
-		} else {
+		}
+		else if (i < note_length*8) {
+			update_gain(warpy, 0.6);
+			update_sample_path(warpy, "venezuelan_frog_cut_silence.wav");
+			update_vocoder_settings(warpy, speed_settings_2);
+			update_vocoder_settings(warpy, pitch_settings_2);
+		}
+		else {
+			update_gain(warpy, 0.2);
 			update_sample_path(warpy, "venezuelan_frog_cut_silence.wav");
 			update_vocoder_settings(warpy, speed_settings_2);
 			update_vocoder_settings(warpy, pitch_settings_2);

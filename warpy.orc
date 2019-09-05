@@ -37,7 +37,6 @@ instr PathGetter
 endin
 
 instr +FileLoader
-    puts gSpath, 1
     ichannels filenchnls gSpath
     gistereo = ichannels - 1
     gileftchan ftgen 1, 0, 0, 1, gSpath, 0, 0, 1
@@ -134,12 +133,14 @@ instr 1
                       ienvsus, ienvrel, ienvrelsh, \
                       0
 
+        asamplepos = phasor(kspeedfinal/gisampledur)*gisampledur
+
         if gistereo == 1 then
-            asigl temposcal kspeedfinal, iamp*kgain, kpitchfinal, gileftchan, 1
-            asigr temposcal kspeedfinal, iamp*kgain, kpitchfinal, girightchan, 1
+            asigl mincer asamplepos, iamp*kgain, kpitchfinal, gileftchan, 1
+            asigr mincer asamplepos, iamp*kgain, kpitchfinal, girightchan, 1
                 outs asigl*aenv, asigr*aenv
         else
-            asig temposcal kspeedfinal, iamp*kgain, kpitchfinal, gileftchan, 1
+            asig mincer asamplepos, iamp*kgain, kpitchfinal, gileftchan, 1
                 outs asig*aenv, asig*aenv
         endif
     endif

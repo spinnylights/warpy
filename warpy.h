@@ -62,7 +62,7 @@ void update_sample_path(struct warpy* warpy, char* path);
 void update_vocoder_settings(struct warpy* warpy,
                              const struct vocoder_settings settings);
 void update_gain(struct warpy* warpy, float norm_gain);
-void update_center(struct warpy* warpy, int center, const char* channel);
+void update_center(struct warpy* warpy, int center, int voc_param);
 void update_envelope(struct warpy* warpy, struct envelope env);
 
 #endif
