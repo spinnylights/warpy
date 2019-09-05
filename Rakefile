@@ -7,16 +7,6 @@ require 'rake/loaders/makefile'
 require_relative 'rake/orc_file'
 
 COMPILER = 'gcc'
-#FLAGS = %w(
-#  -std=gnu18
-#  -pedantic-errors
-#  -Wall
-#  -Werror
-#  -x
-#  c
-#  -isystem
-#  /usr/include
-#).join(' ')
 
 FLAGS = %w(
   -g
@@ -24,12 +14,14 @@ FLAGS = %w(
   -Werror
 ).join(' ')
 
-LIB_FLAGS = %w(
+LIBS = %w(
   -lm
-  /usr/lib/libcsound64.so
-  /usr/lib/libsox.so
-  test/tinywav/tinywav.so
+  -lcsound64
+  -lsox
 ).join(' ')
+
+TEST_LIBS = 'test/tinywav/tinywav.so'
+
 ORC_INFILE = 'warpy.orc'
 ORC_OUTFILE = 'warpy.orc.xxd'
 
@@ -37,9 +29,6 @@ file ORC_OUTFILE => ORC_INFILE do
   orc = OrcFile.new(ORC_INFILE, ORC_OUTFILE)
   orc.write_commentless
   orc.conv_commentless_to_hexdump
-  #orc.clean_tmpstrings_from_hexdump
-  #orc.remove_len
-  #orc.change_unsigned_to_const
 end
 CLEAN.include(ORC_OUTFILE)
 
@@ -58,30 +47,22 @@ CLOBBER.include('*.so')
 CLEAN.include('*.o')
 CLEAN.include('*.mf')
 
-#file 'warpy.orc.o' => [ORC_OUTFILE] do
-#  sh "#{COMPILER} #{FLAGS} -c #{ORC_OUTFILE}"
-#end
-
-#file 'warpy.o' => ['warpy.c', 'warpy.h'] do
-#  sh "#{COMPILER} #{FLAGS} -c warpy.c"
-#end
-
-#TEST_OUTFILE = 'test_warpy.o'
-
-#file 'test_warpy.o' => ['warpy.o', 'test_warpy.c'] do |t|
-#  sh "#{COMPILER} #{FLAGS} -c test_warpy.c"
-#end
-
-file 'test_warpy' => ['warpy.c', 'test_warpy.c', 'warpy.orc.xxd'] do |t|
-  sh "#{COMPILER} #{FLAGS} test_warpy.c warpy.c #{LIB_FLAGS} -o #{t.name}"
+file 'warpy.o' => ['warpy.c', ORC_OUTFILE] do |t|
+  sh "#{COMPILER} #{FLAGS} -c -o #{t.name} warpy.c"
 end
 
-file 'warpy.so' => ['warpy.orc.xxd', 'warpy.c', 'warpy_lv2.c', 'warpy.ttl'] do |t|
+file 'test_warpy.o' => 'test_warpy.c' do |t|
+  sh "#{COMPILER} #{FLAGS} -c -o #{t.name} test_warpy.c"
+end
+
+task 'test_warpy' => ['test_warpy.o', 'warpy.o'] do |t|
+  sh "#{COMPILER} #{FLAGS} test_warpy.o warpy.o #{LIBS} #{TEST_LIBS} -o #{t.name}"
+end
+
+file 'warpy.so' => [ORC_OUTFILE, 'warpy.c', 'warpy_lv2.c', 'warpy.ttl'] do |t|
   sh "#{COMPILER} #{FLAGS} -c -fpic warpy_lv2.c warpy.c"
-  sh "#{COMPILER} #{FLAGS} -shared -o warpy.so warpy_lv2.o warpy.o -lm /usr/lib/libcsound64.so"
+  sh "#{COMPILER} #{FLAGS} -shared -o warpy.so warpy_lv2.o warpy.o #{LIBS}"
 end
-
-#CLOBBER.include(TEST_OUTFILE)
 
 task default: :build
 task :build => [ORC_OUTFILE] do
