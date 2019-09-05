@@ -80,6 +80,8 @@ instr 1
         ienvrelsh chnget "env_release_shape"
         ; reverse
         kreverse chnget "reverse"
+        ; loop times
+        ilooptimes chnget "loop_times"
 
         iamp  ampmidi 1
 
@@ -139,21 +141,53 @@ instr 1
                       ienvsus, ienvrel, ienvrelsh, \
                       0
 
-        asamplephasor phasor kspeedfinal/gisampledur
-        if kreverse == 1 then
-            asamplepos = abs(asamplephasor - 1)*gisampledur
+        ispeedfinal = i(kspeedfinal)
+        if ispeedfinal == 0 then
+            ispeedfinal = 1
+        endif
+
+        if (ilooptimes > 0) then
+            klimit line 0, gisampledur / ispeedfinal, 1
         else
-            asamplepos = asamplephasor*gisampledur
+            klimit = 0
+        endif
+
+        apointer phasor kspeedfinal / gisampledur
+
+        if kreverse == 1 then
+            asamplepos = abs(apointer - 0.9)*gisampledur
+        else
+            asamplepos = apointer*gisampledur
         endif
 
         if gistereo == 1 then
-            asigl $MINCER_OUT(gileftchan)
-            asigr $MINCER_OUT(girightchan)
-                outs asigl*aenv, asigr*aenv
+            apresigl $MINCER_OUT(gileftchan)
+            apresigr $MINCER_OUT(girightchan)
         else
-            asig $MINCER_OUT(gileftchan)
-                outs asig*aenv, asig*aenv
+            apresigl $MINCER_OUT(gileftchan)
+            apresigr = apresigl
         endif
+
+        asigl = apresigl * aenv
+        asigr = apresigr * aenv
+
+        kdialdown init 1
+        kloopover init 0
+
+        if (ilooptimes > 0) && (klimit >= ilooptimes - 0.1) then
+            kloopover = 1
+        endif
+
+        if kloopover == 1 then
+            kdialdown = kdialdown - 0.3
+            if kdialdown < 0 then
+                kdialdown = 0
+            endif
+            asigl = asigl * kdialdown
+            asigr = asigr * kdialdown
+        endif
+
+        outs asigl, asigr
     endif
 endin
 

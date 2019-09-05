@@ -260,6 +260,7 @@ struct cache {
 	struct param* env_release_time;
 	struct param* env_release_shape;
 	struct param* reverse;
+	struct param* loop_times;
 };
 
 struct cache* create_cache(void)
@@ -288,6 +289,7 @@ struct cache* create_cache(void)
 	cache->env_release_time  = create_param(NULL, "env_release_time");
 	cache->env_release_shape = create_param(NULL, "env_release_shape");
 	cache->reverse = create_param(NULL, "reverse");
+	cache->loop_times = create_param(NULL, "loop_times");
 	return cache;
 }
 
@@ -450,6 +452,7 @@ static void set_up_midi(CSOUND* csound)
 {
 	csoundSetOption(csound, "-+rtmidi=null");
 	csoundSetOption(csound, "-M0");
+	csoundSetOption(csound, "--logfile=null");
 	csoundSetHostImplementedMIDIIO(csound, true);
 	csoundSetExternalMidiInOpenCallback(csound, open_input_device);
 	csoundSetExternalMidiReadCallback(csound, read_midi_data);
@@ -729,4 +732,9 @@ void update_envelope(struct warpy* warpy, struct envelope env)
 void update_reverse(struct warpy* warpy, bool reverse)
 {
 	update_against_cache(warpy, warpy->cache->reverse, reverse);
+}
+
+void update_loop_times(struct warpy* warpy, unsigned loop_times)
+{
+	update_against_cache(warpy, warpy->cache->loop_times, loop_times);
 }

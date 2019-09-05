@@ -65,5 +65,6 @@ void update_gain(struct warpy* warpy, float norm_gain);
 void update_center(struct warpy* warpy, int center, int voc_param);
 void update_envelope(struct warpy* warpy, struct envelope env);
 void update_reverse(struct warpy* warpy, bool reverse);
+void update_loop_times(struct warpy* warpy, unsigned loop_times);
 
 #endif
