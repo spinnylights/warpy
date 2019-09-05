@@ -325,9 +325,7 @@ struct warpy* create_warpy(double sample_rate)
 	return warpy;
 }
 
-void update_against_cache(struct warpy* warpy,
-                          struct param* param,
-                          float new_arg)
+static void check_cache(struct param* param, float new_arg)
 {
 	if (!(param->arg == new_arg)) {
 		param->arg = new_arg;
@@ -337,19 +335,30 @@ void update_against_cache(struct warpy* warpy,
 			param->result = new_arg;
 		param->is_cs_current = false;
 	}
+}
 
+static void check_csound_against_cache(CSOUND* csound, struct param* param)
+{
 	if (!param->is_cs_current) {
 		MYFLT cs_current_val =
-			csoundGetControlChannel(warpy->csound,
+			csoundGetControlChannel(csound,
 			                        param->channel,
 			                        NULL);
 		if (param->result == cs_current_val)
 			param->is_cs_current = true;
 		else
-			csoundSetControlChannel(warpy->csound,
+			csoundSetControlChannel(csound,
 			                        param->channel,
 			                        param->result);
 	}
+}
+
+static void update_against_cache(struct warpy* warpy,
+                          struct param* param,
+                          float new_arg)
+{
+	check_cache(param, new_arg);
+	check_csound_against_cache(warpy->csound, param);
 }
 
 static bool ensure_status(const int status,
@@ -646,16 +655,6 @@ void update_sample_path(struct warpy* warpy, char* path)
 	csoundSetStringChannel(warpy->csound, PATH_CHANNEL, path);
 }
 
-static void update_speed_adjust(struct warpy* warpy, double norm_speed)
-{
-	update_against_cache(warpy, warpy->cache->speed_adjust, norm_speed);
-}
-
-static void update_pitch_adjust(struct warpy* warpy, MYFLT norm_pitch)
-{
-	update_against_cache(warpy, warpy->cache->pitch_adjust, norm_pitch);
-}
-
 void update_vocoder_settings(struct warpy* warpy,
                              const struct vocoder_settings settings)
 {
@@ -666,8 +665,10 @@ void update_vocoder_settings(struct warpy* warpy,
 	float upper_scale = settings.upper_scale;
 
 	if (type == VOC_SPEED) {
-		update_speed_adjust(warpy, adjust);
-		update_center(warpy, center, VOC_SPEED);
+		update_against_cache(warpy, warpy->cache->speed_adjust, adjust);
+		update_against_cache(warpy,
+		                     warpy->cache->speed_center,
+		                     center);
 		update_against_cache(warpy,
 		                     warpy->cache->speed_lower_scale,
 		                     lower_scale);
@@ -676,8 +677,10 @@ void update_vocoder_settings(struct warpy* warpy,
 		                     upper_scale);
 	}
 	else if (type == VOC_PITCH) {
-		update_pitch_adjust(warpy, adjust);
-		update_center(warpy, center, VOC_PITCH);
+		update_against_cache(warpy, warpy->cache->pitch_adjust, adjust);
+		update_against_cache(warpy,
+		                     warpy->cache->pitch_center,
+		                     center);
 		update_against_cache(warpy,
 		                     warpy->cache->pitch_lower_scale,
 		                     lower_scale);
@@ -690,18 +693,6 @@ void update_vocoder_settings(struct warpy* warpy,
 void update_gain(struct warpy* warpy, float norm_gain)
 {
 	update_against_cache(warpy, warpy->cache->gain, norm_gain);
-}
-
-void update_center(struct warpy* warpy, int center, int voc_param)
-{
-	if (voc_param == VOC_SPEED)
-		update_against_cache(warpy,
-		                     warpy->cache->speed_center,
-		                     center);
-	else if (voc_param == VOC_PITCH)
-		update_against_cache(warpy,
-		                     warpy->cache->pitch_center,
-		                     center);
 }
 
 void update_envelope(struct warpy* warpy, struct envelope env)
