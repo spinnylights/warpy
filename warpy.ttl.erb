@@ -29,6 +29,7 @@ warpy:sample
 	rdfs:label "sample" ;
 	rdfs:range atom:Path .
 
+<% index = -1 %>
 <https://milky.flowers/programs/warpy>
 	a lv2:Plugin ;
 	doap:name "Warpy" ;
@@ -43,22 +44,22 @@ warpy:sample
 		atom:supports midi:MidiEvent,
 			patch:Message ;
 		lv2:designation lv2:control ;
-		lv2:index 0 ;
+		lv2:index <%= index += 1 %> ;
 		lv2:symbol "in" ;
 		lv2:name "In" ;
 	] , [
 		a lv2:OutputPort, lv2:AudioPort ;
-		lv2:index 1 ;
+		lv2:index <%= index += 1 %> ;
 		lv2:symbol "out_l" ;
 		lv2:name "Left" ;
 	] , [
 		a lv2:OutputPort, lv2:AudioPort ;
-		lv2:index 2 ;
+		lv2:index <%= index += 1 %> ;
 		lv2:symbol "out_r" ;
 		lv2:name "Right" ;
 	] , [
 		a lv2:InputPort, lv2:ControlPort ;
-		lv2:index 3 ;
+		lv2:index <%= index += 1 %> ;
 		lv2:symbol "speed_adjust" ;
 		lv2:name "Speed Adjust" ;
 		lv2:default 0.5 ;
@@ -66,7 +67,7 @@ warpy:sample
 		lv2:maximum 1.0 ;
 	] , [
 		a lv2:InputPort, lv2:ControlPort ;
-		lv2:index 4 ;
+		lv2:index <%= index += 1 %> ;
 		lv2:symbol "speed_center" ;
 		lv2:name "Speed Center" ;
 		lv2:portProperty lv2:integer ;
@@ -75,7 +76,7 @@ warpy:sample
 		lv2:maximum 127.0 ;
 	] , [
 		a lv2:InputPort, lv2:ControlPort ;
-		lv2:index 5 ;
+		lv2:index <%= index += 1 %> ;
 		lv2:symbol "speed_lower_scale" ;
 		lv2:name "Lower Speed Scale" ;
 		lv2:default -1.0 ;
@@ -83,7 +84,7 @@ warpy:sample
 		lv2:maximum 4.0 ;
 	] , [
 		a lv2:InputPort, lv2:ControlPort ;
-		lv2:index 6 ;
+		lv2:index <%= index += 1 %> ;
 		lv2:symbol "speed_upper_scale" ;
 		lv2:name "Upper Speed Scale" ;
 		lv2:default 1.0 ;
@@ -91,7 +92,7 @@ warpy:sample
 		lv2:maximum 4.0 ;
 	] , [
 		a lv2:InputPort, lv2:ControlPort ;
-		lv2:index 7 ;
+		lv2:index <%= index += 1 %> ;
 		lv2:symbol "pitch_adjust" ;
 		lv2:name "Pitch Adjust" ;
 		lv2:default 0.5 ;
@@ -99,7 +100,7 @@ warpy:sample
 		lv2:maximum 1.0 ;
 	] , [
 		a lv2:InputPort, lv2:ControlPort ;
-		lv2:index 8 ;
+		lv2:index <%= index += 1 %> ;
 		lv2:symbol "pitch_center" ;
 		lv2:name "Pitch Center" ;
 		lv2:portProperty lv2:integer ;
@@ -108,7 +109,7 @@ warpy:sample
 		lv2:maximum 127.0 ;
 	] , [
 		a lv2:InputPort, lv2:ControlPort ;
-		lv2:index 9 ;
+		lv2:index <%= index += 1 %> ;
 		lv2:symbol "pitch_lower_scale" ;
 		lv2:name "Lower Pitch Scale" ;
 		lv2:default -1.0 ;
@@ -116,7 +117,7 @@ warpy:sample
 		lv2:maximum 4.0 ;
 	] , [
 		a lv2:InputPort, lv2:ControlPort ;
-		lv2:index 10 ;
+		lv2:index <%= index += 1 %> ;
 		lv2:symbol "pitch_upper_scale" ;
 		lv2:name "Upper Pitch Scale" ;
 		lv2:default 1.0 ;
@@ -124,7 +125,7 @@ warpy:sample
 		lv2:maximum 4.0 ;
 	] , [
 		a lv2:InputPort, lv2:ControlPort ;
-		lv2:index 11 ;
+		lv2:index <%= index += 1 %> ;
 		lv2:symbol "attack_time" ;
 		lv2:name "Attack Time" ;
 		lv2:default 0.01 ;
@@ -132,7 +133,7 @@ warpy:sample
 		lv2:maximum 4.0 ;
 	] , [
 		a lv2:InputPort, lv2:ControlPort ;
-		lv2:index 12 ;
+		lv2:index <%= index += 1 %> ;
 		lv2:symbol "attack_shape" ;
 		lv2:name "Attack Shape" ;
 		lv2:default 0.0 ;
@@ -140,7 +141,7 @@ warpy:sample
 		lv2:maximum 10.0 ;
 	] , [
 		a lv2:InputPort, lv2:ControlPort ;
-		lv2:index 13 ;
+		lv2:index <%= index += 1 %> ;
 		lv2:symbol "decay_time" ;
 		lv2:name "Decay Time" ;
 		lv2:default 0.01 ;
@@ -148,7 +149,7 @@ warpy:sample
 		lv2:maximum 4.0 ;
 	] , [
 		a lv2:InputPort, lv2:ControlPort ;
-		lv2:index 14 ;
+		lv2:index <%= index += 1 %> ;
 		lv2:symbol "decay_shape" ;
 		lv2:name "Decay Shape" ;
 		lv2:default 0.0 ;
@@ -156,7 +157,7 @@ warpy:sample
 		lv2:maximum 10.0 ;
 	] , [
 		a lv2:InputPort, lv2:ControlPort ;
-		lv2:index 15 ;
+		lv2:index <%= index += 1 %> ;
 		lv2:symbol "sustain_level" ;
 		lv2:name "Sustain Level" ;
 		lv2:default 1.0 ;
@@ -164,7 +165,7 @@ warpy:sample
 		lv2:maximum 1.0 ;
 	] , [
 		a lv2:InputPort, lv2:ControlPort ;
-		lv2:index 16 ;
+		lv2:index <%= index += 1 %> ;
 		lv2:symbol "release_time" ;
 		lv2:name "Release Time" ;
 		lv2:default 0.01 ;
@@ -172,7 +173,7 @@ warpy:sample
 		lv2:maximum 4.0 ;
 	] , [
 		a lv2:InputPort, lv2:ControlPort ;
-		lv2:index 17 ;
+		lv2:index <%= index += 1 %> ;
 		lv2:symbol "release_shape" ;
 		lv2:name "Release Shape" ;
 		lv2:default 0.0 ;
@@ -180,7 +181,7 @@ warpy:sample
 		lv2:maximum 10.0 ;
 	] , [
 		a lv2:InputPort, lv2:ControlPort ;
-		lv2:index 18 ;
+		lv2:index <%= index += 1 %> ;
 		lv2:symbol "gain" ;
 		lv2:name "Gain" ;
 		lv2:default 0.5 ;

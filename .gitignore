@@ -6,3 +6,4 @@ test/tinywav
 *.time
 *.o
 *.so
+warpy.ttl

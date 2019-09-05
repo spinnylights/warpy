@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'erb'
 require 'rake/clean'
 require 'rake/loaders/makefile'
 
@@ -42,6 +43,16 @@ file ORC_OUTFILE => ORC_INFILE do
 end
 CLEAN.include(ORC_OUTFILE)
 
+TTL_INFILE = 'warpy.ttl.erb'
+TTL_OUTFILE = 'warpy.ttl'
+
+file TTL_OUTFILE => TTL_INFILE do
+  ttl_f = File.open(TTL_INFILE) {|f| f.read}
+  ttl = ERB.new(ttl_f)
+  File.open(TTL_OUTFILE, 'w') {|f| f.print ttl.result.gsub(/\n{3,}/, "\n\n")}
+end
+CLEAN.include(TTL_OUTFILE)
+
 CLOBBER.include('*.so')
 
 CLEAN.include('*.o')
@@ -65,7 +76,7 @@ file 'test_warpy' => ['warpy.c', 'test_warpy.c', 'warpy.orc.xxd'] do |t|
   sh "#{COMPILER} #{FLAGS} test_warpy.c warpy.c #{LIB_FLAGS} -o #{t.name}"
 end
 
-file 'warpy.so' => ['warpy.orc.xxd', 'warpy.c', 'warpy_lv2.c'] do |t|
+file 'warpy.so' => ['warpy.orc.xxd', 'warpy.c', 'warpy_lv2.c', 'warpy.ttl'] do |t|
   sh "#{COMPILER} #{FLAGS} -c -fpic warpy_lv2.c warpy.c"
   sh "#{COMPILER} #{FLAGS} -shared -o warpy.so warpy_lv2.o warpy.o -lm /usr/lib/libcsound64.so"
 end
