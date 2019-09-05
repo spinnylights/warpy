@@ -60,6 +60,15 @@ warpy:sample
 	] , [
 		a lv2:InputPort, lv2:ControlPort ;
 		lv2:index <%= index += 1 %> ;
+		lv2:symbol "reverse" ;
+		lv2:name "Reverse" ;
+		lv2:portProperty lv2:toggled ;
+		lv2:default 0.0 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 1.0 ;
+	] , [
+		a lv2:InputPort, lv2:ControlPort ;
+		lv2:index <%= index += 1 %> ;
 		lv2:symbol "speed_adjust" ;
 		lv2:name "Speed Adjust" ;
 		lv2:default 0.5 ;

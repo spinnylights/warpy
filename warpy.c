@@ -259,6 +259,7 @@ struct cache {
 	struct param* env_sustain_level;
 	struct param* env_release_time;
 	struct param* env_release_shape;
+	struct param* reverse;
 };
 
 struct cache* create_cache(void)
@@ -286,6 +287,7 @@ struct cache* create_cache(void)
 	cache->env_sustain_level = create_param(NULL, "env_sustain_level");
 	cache->env_release_time  = create_param(NULL, "env_release_time");
 	cache->env_release_shape = create_param(NULL, "env_release_shape");
+	cache->reverse = create_param(NULL, "reverse");
 	return cache;
 }
 
@@ -722,4 +724,9 @@ void update_envelope(struct warpy* warpy, struct envelope env)
 	update_against_cache(warpy,
 	                     warpy->cache->env_release_shape,
 	                     env.release_shape);
+}
+
+void update_reverse(struct warpy* warpy, bool reverse)
+{
+	update_against_cache(warpy, warpy->cache->reverse, reverse);
 }

@@ -64,5 +64,6 @@ void update_vocoder_settings(struct warpy* warpy,
 void update_gain(struct warpy* warpy, float norm_gain);
 void update_center(struct warpy* warpy, int center, int voc_param);
 void update_envelope(struct warpy* warpy, struct envelope env);
+void update_reverse(struct warpy* warpy, bool reverse);
 
 #endif

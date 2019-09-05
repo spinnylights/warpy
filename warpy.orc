@@ -74,6 +74,8 @@ instr 1
         ienvsus   chnget "env_sustain_level"
         ienvrel   chnget "env_release_time"
         ienvrelsh chnget "env_release_shape"
+        ; reverse
+        kreverse chnget "reverse"
 
         iamp  ampmidi 1
 
@@ -133,7 +135,12 @@ instr 1
                       ienvsus, ienvrel, ienvrelsh, \
                       0
 
-        asamplepos = phasor(kspeedfinal/gisampledur)*gisampledur
+        asamplephasor phasor kspeedfinal/gisampledur
+        if kreverse == 1 then
+            asamplepos = abs(asamplephasor - 1)*gisampledur
+        else
+            asamplepos = asamplephasor*gisampledur
+        endif
 
         if gistereo == 1 then
             asigl mincer asamplepos, iamp*kgain, kpitchfinal, gileftchan, 1

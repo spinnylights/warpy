@@ -18,6 +18,7 @@ enum port_indices {
 	WARPY_IN,
 	WARPY_OUT_L,
 	WARPY_OUT_R,
+	WARPY_REVERSE,
 	WARPY_SPEED_ADJUST,
 	WARPY_SPEED_CENTER,
 	WARPY_SPEED_LOWER_SCALE,
@@ -43,6 +44,7 @@ struct lv2 {
 		const LV2_Atom_Sequence* in;
 		float*                   out_l;
 		float*                   out_r;
+		float*                   reverse;
 		float*                   speed_adjust;
 		float*                   speed_center;
 		float*                   speed_lower_scale;
@@ -127,6 +129,9 @@ static void connect_port(LV2_Handle instance,
 		case WARPY_OUT_R:
 			lv2->ports.out_r = (float*)data;
 			break;
+		case WARPY_REVERSE:
+			lv2->ports.reverse = (float*)data;
+			break;
 		case WARPY_SPEED_ADJUST:
 			lv2->ports.speed_adjust = (float*)data;
 			break;
@@ -186,6 +191,8 @@ static void activate(LV2_Handle instance)
 
 static void update_control_ports(struct lv2* lv2)
 {
+	update_reverse(lv2->warpy, *(lv2->ports.reverse));
+
 	update_gain(lv2->warpy,   *(lv2->ports.gain));
 
 	struct envelope env;
