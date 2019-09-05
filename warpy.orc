@@ -64,6 +64,11 @@ instr 1
         kspeedlowerscale chnget "speed_lower_scale"
         kspeedlowerscale = kspeedlowerscale * -1
         kspeedupperscale chnget "speed_upper_scale"
+        ispeedadjust     chnget "speed_adjust"
+        ispeedcenter     chnget "speed_center"
+        ispeedlowerscale chnget "speed_lower_scale"
+        ispeedlowerscale = ispeedlowerscale * -1
+        ispeedupperscale chnget "speed_upper_scale"
         ; pitch
         kpitchadjust     chnget "pitch_adjust"
         kpitchcenter     chnget "pitch_center"
@@ -87,6 +92,7 @@ instr 1
 
         imfreq cpsmidi
         kspeeddiff = $NOTE_DIFF(imfreq'kspeedcenter)
+        ispeeddiff = $NOTE_DIFF(imfreq'ispeedcenter)
         kpitchdiff = $NOTE_DIFF(imfreq'kpitchcenter)
 
         if kspeeddiff == 1 then
@@ -104,6 +110,24 @@ instr 1
                     kspeeddiff = 1 / kspeeddiff
                 endif
                 kspeedscaled = $SCALED(kspeeddiff'kspeedlowerscale)
+            endif
+        endif
+
+        if ispeeddiff == 1 then
+            ispeedscaled = 1
+        else
+            if ispeeddiff > 1 then
+                if ispeedupperscale < 0 then
+                    ispeedupperscale = abs(ispeedupperscale)
+                    ispeeddiff = 1 / ispeeddiff
+                endif
+                ispeedscaled = $SCALED(ispeeddiff'ispeedupperscale)
+            else
+                if ispeedlowerscale < 0 then
+                    ispeedlowerscale = abs(ispeedlowerscale)
+                    ispeeddiff = 1 / ispeeddiff
+                endif
+                ispeedscaled = $SCALED(ispeeddiff'ispeedlowerscale)
             endif
         endif
 
@@ -126,6 +150,8 @@ instr 1
         endif
 
         kspeedfinal = kspeedscaled * kspeedadjust
+        ispeedfinal = ispeedscaled * ispeedadjust
+
         kpitchfinal = kpitchscaled * kpitchadjust
 
         if kspeedfinal < $VOC_MIN then
@@ -141,7 +167,6 @@ instr 1
                       ienvsus, ienvrel, ienvrelsh, \
                       0
 
-        ispeedfinal = i(kspeedfinal)
         if ispeedfinal == 0 then
             ispeedfinal = 1
         endif

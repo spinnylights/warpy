@@ -52,31 +52,31 @@ void play_test(struct warpy* warpy)
 
 	struct vocoder_settings speed_settings_1;
 	speed_settings_1.type   = VOC_SPEED;
-	speed_settings_1.adjust = 0.5;
-	speed_settings_1.center = 127;
-	speed_settings_1.lower_scale = -4;
-	speed_settings_1.upper_scale = 0;
+	speed_settings_1.adjust = 0.3;
+	speed_settings_1.center = 60;
+	speed_settings_1.lower_scale = -1;
+	speed_settings_1.upper_scale = 1;
 
 	struct vocoder_settings speed_settings_2;
 	speed_settings_2.type   = VOC_SPEED;
-	speed_settings_2.adjust = 0.5;
-	speed_settings_2.center = 127;
-	speed_settings_2.lower_scale = -4;
-	speed_settings_2.upper_scale = 0;
+	speed_settings_2.adjust = 0.7;
+	speed_settings_2.center = 60;
+	speed_settings_2.lower_scale = -1;
+	speed_settings_2.upper_scale = 1;
 
 	struct vocoder_settings pitch_settings_1;
 	pitch_settings_1.type   = VOC_PITCH;
 	pitch_settings_1.adjust = 0.5;
 	pitch_settings_1.center = 60;
-	pitch_settings_1.lower_scale = -1;
-	pitch_settings_1.upper_scale = 1;
+	pitch_settings_1.lower_scale = 0;
+	pitch_settings_1.upper_scale = 0;
 
 	struct vocoder_settings pitch_settings_2;
 	pitch_settings_2.type   = VOC_PITCH;
 	pitch_settings_2.adjust = 0.5;
 	pitch_settings_2.center = 60;
-	pitch_settings_2.lower_scale = -1;
-	pitch_settings_2.upper_scale = 1;
+	pitch_settings_2.lower_scale = 0;
+	pitch_settings_2.upper_scale = 0;
 
 	for (i = 0; i < length; i++) {
 		update_envelope(warpy, env);
@@ -86,23 +86,23 @@ void play_test(struct warpy* warpy)
 			update_sample_path(warpy, "hi-hat.wav");
 			update_vocoder_settings(warpy, speed_settings_1);
 			update_vocoder_settings(warpy, pitch_settings_1);
-			update_loop_times(warpy, 0);
+			update_loop_times(warpy, 1);
 		}
 		else if (i < note_length*8) {
 			update_gain(warpy, 0.5);
 			update_reverse(warpy, false);
-			update_sample_path(warpy, "venezuelan_frog_cut_silence.wav");
+			update_sample_path(warpy, "hi-hat.wav");
 			update_vocoder_settings(warpy, speed_settings_2);
 			update_vocoder_settings(warpy, pitch_settings_2);
-			update_loop_times(warpy, 0);
+			update_loop_times(warpy, 2);
 		}
 		else {
 			update_gain(warpy, 0.5);
 			update_reverse(warpy, false);
-			update_sample_path(warpy, "venezuelan_frog_cut_silence.wav");
+			update_sample_path(warpy, "hi-hat.wav");
 			update_vocoder_settings(warpy, speed_settings_2);
 			update_vocoder_settings(warpy, pitch_settings_2);
-			update_loop_times(warpy, 0);
+			update_loop_times(warpy, 10);
 		}
 
 		if      (i == note_length)
