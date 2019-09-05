@@ -50,6 +50,10 @@ endin
 #define NOTE_DIFF(freq'center) #$freq / cpsmidinn($center)#
 #define SCALED(diff'scale) #1 + (($diff - 1) * $scale)#
 #define VOC_MIN #0.0001#
+#define MINCER_FFT_SIZE #8184#
+#define MINCER_DECIM #8#
+#define MINCER_OUT(chan) #mincer asamplepos, iamp*kgain, kpitchfinal,\
+                                 $chan, 1, $MINCER_FFT_SIZE, $MINCER_DECIM#
 
 instr 1
     if gisampleready == 1 then
@@ -143,11 +147,11 @@ instr 1
         endif
 
         if gistereo == 1 then
-            asigl mincer asamplepos, iamp*kgain, kpitchfinal, gileftchan, 1
-            asigr mincer asamplepos, iamp*kgain, kpitchfinal, girightchan, 1
+            asigl $MINCER_OUT(gileftchan)
+            asigr $MINCER_OUT(girightchan)
                 outs asigl*aenv, asigr*aenv
         else
-            asig mincer asamplepos, iamp*kgain, kpitchfinal, gileftchan, 1
+            asig $MINCER_OUT(gileftchan)
                 outs asig*aenv, asig*aenv
         endif
     endif
