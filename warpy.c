@@ -267,11 +267,11 @@ struct cache* create_cache(void)
 {
 	struct cache* cache = (struct cache*)calloc(1, sizeof(struct cache));
 	cache->speed_adjust = create_param(&calc_speed_adjust, "speed_adjust");
-	cache->speed_center = create_param(&check_scale_range,
+	cache->speed_center = create_param(&check_midi_note_range,
 	                                   "speed_center");
 	cache->speed_lower_scale = create_param(&check_scale_range,
 	                                        "speed_lower_scale");
-	cache->speed_upper_scale = create_param(&check_midi_note_range,
+	cache->speed_upper_scale = create_param(&check_scale_range,
 	                                        "speed_upper_scale");
 	cache->pitch_adjust = create_param(&calc_pitch_adjust, "pitch_adjust");
 	cache->pitch_center = create_param(&check_midi_note_range,
