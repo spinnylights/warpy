@@ -661,7 +661,7 @@ void update_vocoder_settings(struct warpy* warpy,
 	int   type        = settings.type;
 	float adjust      = settings.adjust;
 	float center      = settings.center;
-	float lower_scale = settings.lower_scale;
+	float lower_scale = settings.lower_scale * -1;
 	float upper_scale = settings.upper_scale;
 
 	if (type == VOC_SPEED) {

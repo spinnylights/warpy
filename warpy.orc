@@ -62,18 +62,15 @@ instr 1
         kspeedadjust     chnget "speed_adjust"
         kspeedcenter     chnget "speed_center"
         kspeedlowerscale chnget "speed_lower_scale"
-        kspeedlowerscale = kspeedlowerscale * -1
         kspeedupperscale chnget "speed_upper_scale"
         ispeedadjust     chnget "speed_adjust"
         ispeedcenter     chnget "speed_center"
         ispeedlowerscale chnget "speed_lower_scale"
-        ispeedlowerscale = ispeedlowerscale * -1
         ispeedupperscale chnget "speed_upper_scale"
         ; pitch
         kpitchadjust     chnget "pitch_adjust"
         kpitchcenter     chnget "pitch_center"
         kpitchlowerscale chnget "pitch_lower_scale"
-        kpitchlowerscale = kpitchlowerscale * -1
         kpitchupperscale chnget "pitch_upper_scale"
         ; envelope
         ienvatt   chnget "env_attack_time"
