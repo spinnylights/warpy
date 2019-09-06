@@ -1,0 +1,126 @@
+/*
+ * This file is part of Warpy.
+ *
+ * Warpy is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Warpy is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Warpy.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+massign 0,1
+
+gistereo init 0
+gisampleready init 0
+gkfirstrun init 1
+gSpath init ""
+gisampledur init 0
+
+instr PathGetter
+    gSpath chnget "path"
+
+    knewfile changed2 gSpath
+    ipathempty strcmp gSpath, ""
+    if ((knewfile == 1) || ((gkfirstrun == 1) && (ipathempty != 0))) then
+        event "i", "FileLoader", 0, 0
+        if gkfirstrun == 1 then
+            gkfirstrun = 0
+        endif
+    endif
+endin
+
+instr +FileLoader
+    ichannels filenchnls gSpath
+    gistereo = ichannels - 1
+    gileftchan ftgen 1, 0, 0, 1, gSpath, 0, 0, 1
+    if gistereo == 1 then
+        girightchan ftgen 2, 0, 0, 1, gSpath, 0, 0, 2
+    endif
+    gisampledur chnget "sample_dur"
+    gisampleready = 1
+endin
+
+instr 1
+    if gisampleready == 1 then
+        kgain     chnget "gain"
+        <%= VocoderParams.new('speed', 'k').params %>
+        <%= VocoderParams.new('speed', 'i').params %>
+        <%= VocoderParams.new('pitch', 'k').params %>
+        ; envelope
+        ienvatt   chnget "env_attack_time"
+        ienvattsh chnget "env_attack_shape"
+        ienvdec   chnget "env_decay_time"
+        ienvdecsh chnget "env_decay_shape"
+        ienvsus   chnget "env_sustain_level"
+        ienvrel   chnget "env_release_time"
+        ienvrelsh chnget "env_release_shape"
+        ; reverse
+        kreverse chnget "reverse"
+        ; loop times
+        ilooptimes chnget "loop_times"
+
+        iamp  ampmidi 1
+
+        imfreq cpsmidi
+
+        <%= VocoderParams.new('speed', 'k').param_process %>
+        <%= VocoderParams.new('speed', 'i').param_process %>
+        <%= VocoderParams.new('pitch', 'k').param_process %>
+
+        aenv transegr 0,       ienvatt, ienvattsh, \
+                      1,       ienvdec, ienvdecsh, \
+                      ienvsus, ienvrel, ienvrelsh, \
+                      0
+
+        if (ilooptimes > 0) then
+            klimit line 0, gisampledur / ispeedfinal, 1
+        else
+            klimit = 0
+        endif
+
+        apointer phasor kspeedfinal / gisampledur
+
+        if kreverse == 1 then
+            asamplepos = abs(apointer - 0.9)*gisampledur
+        else
+            asamplepos = apointer*gisampledur
+        endif
+
+        if gistereo == 1 then
+            apresigl <%= mincer_out('gileftchan') %>
+            apresigr <%= mincer_out('girightchan') %>
+        else
+            apresigl <%= mincer_out('gileftchan') %>
+            apresigr = apresigl
+        endif
+
+        asigl = apresigl * aenv
+        asigr = apresigr * aenv
+
+        kdialdown init 1
+        kloopover init 0
+
+        if (ilooptimes > 0) && (klimit >= ilooptimes - 0.1) then
+            kloopover = 1
+        endif
+
+        if kloopover == 1 then
+            kdialdown = kdialdown - 0.3
+            if kdialdown < 0 then
+                kdialdown = 0
+            endif
+            asigl = asigl * kdialdown
+            asigr = asigr * kdialdown
+        endif
+
+        outs asigl, asigr
+    endif
+endin
+

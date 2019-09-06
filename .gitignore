@@ -1,4 +1,5 @@
 warpy.orc.*
+!warpy.orc.erb
 *.ogg
 *.wav
 test_warpy

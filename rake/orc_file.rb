@@ -1,22 +1,29 @@
 # frozen_string_literal: true
 
+require_relative 'orc_file_erb'
+
 class OrcFile
+  include OrcFileERB
+
   attr_reader :infile, :outfile
   def initialize(infile, outfile)
     @infile = infile
     @outfile = outfile
   end
 
-  def write_commentless
-    orc = File.open(infile) {|f| f.read}
-    commentless = orc.gsub(/\/\*.*\*\//m, '').strip
-    File.open(comless_file, 'w') {|f| f.puts commentless}
+  def preprocess
+    orc_source = File.open(infile) {|f| f.read}
+    orc = ERB.new(orc_source).result(binding)
+    min_newlines = orc.gsub(/\n{2,}/m, "\n")
+    stripped = min_newlines.lines.map {|l| l.strip}.join("\n")
+    commentless = stripped.gsub(/\/\*.*\*\//m, '').strip
+    File.open(preproced_file, 'w') {|f| f.puts commentless}
   end
 
-  def conv_commentless_to_hexdump
-    `xxd -i < #{comless_file} > #{outfile}`
+  def conv_to_hexdump
+    `xxd -i < #{preproced_file} > #{outfile}`
     `echo ', 0' >> #{outfile}`
-    `rm #{comless_file}`
+    `rm #{preproced_file}`
   end
 
   def clean_tmpstrings_from_hexdump
@@ -40,7 +47,7 @@ class OrcFile
 
   private
 
-  def comless_file
+  def preproced_file
      infile + '.tmp'
   end
 end

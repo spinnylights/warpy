@@ -22,13 +22,13 @@ LIBS = %w(
 
 TEST_LIBS = 'test/tinywav/tinywav.so'
 
-ORC_INFILE = 'warpy.orc'
+ORC_INFILE = 'warpy.orc.erb'
 ORC_OUTFILE = 'warpy.orc.xxd'
 
 file ORC_OUTFILE => ORC_INFILE do
   orc = OrcFile.new(ORC_INFILE, ORC_OUTFILE)
-  orc.write_commentless
-  orc.conv_commentless_to_hexdump
+  orc.preprocess
+  orc.conv_to_hexdump
 end
 CLEAN.include(ORC_OUTFILE)
 
