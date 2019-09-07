@@ -261,6 +261,8 @@ struct cache {
 	struct param* env_release_shape;
 	struct param* reverse;
 	struct param* loop_times;
+	struct param* start_point;
+	struct param* end_point;
 };
 
 struct cache* create_cache(void)
@@ -290,6 +292,8 @@ struct cache* create_cache(void)
 	cache->env_release_shape = create_param(NULL, "env_release_shape");
 	cache->reverse = create_param(NULL, "reverse");
 	cache->loop_times = create_param(NULL, "loop_times");
+	cache->start_point = create_param(NULL, "start_point");
+	cache->end_point = create_param(NULL, "end_point");
 	return cache;
 }
 
@@ -354,8 +358,8 @@ static void check_csound_against_cache(CSOUND* csound, struct param* param)
 }
 
 static void update_against_cache(struct warpy* warpy,
-                          struct param* param,
-                          float new_arg)
+                                 struct param* param,
+                                 float new_arg)
 {
 	check_cache(param, new_arg);
 	check_csound_against_cache(warpy->csound, param);
@@ -728,4 +732,21 @@ void update_reverse(struct warpy* warpy, bool reverse)
 void update_loop_times(struct warpy* warpy, unsigned loop_times)
 {
 	update_against_cache(warpy, warpy->cache->loop_times, loop_times);
+}
+
+void update_start_and_end_points(struct warpy* warpy, float start, float end)
+{
+	start = (MYFLT)start;
+	end = (MYFLT)end;
+
+	if (start < 0)
+		start = 0;
+	if (end > 1)
+		end = 1;
+	if (start >= end) {
+		start = end - 0.03;
+	}
+
+	update_against_cache(warpy, warpy->cache->start_point, start);
+	update_against_cache(warpy, warpy->cache->end_point, end);
 }

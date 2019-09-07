@@ -65,6 +65,9 @@ instr 1
         kreverse chnget "reverse"
         ; loop times
         ilooptimes chnget "loop_times"
+        ; start and end points
+        istart chnget "start_point"
+        iend   chnget "end_point"
 
         iamp  ampmidi 1
 
@@ -85,7 +88,14 @@ instr 1
             klimit = 0
         endif
 
-        apointer phasor kspeedfinal / gisampledur
+        krate = (kspeedfinal / gisampledur)
+        if (istart > 0 || iend < 1) then
+          kratescaled = krate * (1 / (iend - istart))
+          aprepointer phasor kratescaled
+          apointer = (aprepointer * (iend - istart)) + istart
+        else
+          apointer phasor krate
+        endif
 
         if kreverse == 1 then
             asamplepos = abs(apointer - 0.9)*gisampledur
