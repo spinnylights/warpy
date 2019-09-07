@@ -83,7 +83,7 @@ instr 1
                       0
 
         if (ilooptimes > 0) then
-            klimit line 0, gisampledur / ispeedfinal, 1
+            klimit line 0, (gisampledur * (iend - istart)) / ispeedfinal, 1
         else
             klimit = 0
         endif
