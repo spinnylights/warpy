@@ -48,24 +48,10 @@ instr +FileLoader
     gisampleready = 1
 endin
 
-instr +ReleaseLine
-    ireleasestart = p4
-    ireleaseend   = p5
-    ispeedfinal   = p6
-    ichannel      = p7
-
-    gkreleaseline = line(0, \
-                            (gisampledur * \
-                            (ireleaseend - ireleasestart)) / \
-                            ispeedfinal, \
-                         1)
-endin
-
 instr 1
     if gisampleready == 1 then
         kgain     chnget "gain"
         <%= VocoderParams.new('speed', 'k').params %>
-        <%= VocoderParams.new('speed', 'i').params %>
         <%= VocoderParams.new('pitch', 'k').params %>
         ; envelope
         ienvatt   chnget "env_attack_time"
@@ -112,7 +98,6 @@ instr 1
         endif
 
         <%= VocoderParams.new('speed', 'k').param_process %>
-        <%= VocoderParams.new('speed', 'i').param_process %>
         <%= VocoderParams.new('pitch', 'k').param_process %>
 
         aenv transegr 0,       ienvatt, ienvattsh, \
@@ -130,7 +115,7 @@ instr 1
         elseif <%= in_sustain_phase %> then
             kmainloops = kmainloops
         else
-            kmainloops line 0, (gisampledur * (iend - istart)) / ispeedfinal, 1
+            kmainloops += <%= kline('imainbaserate') %>
         endif
 
         krate = (kspeedfinal / gisampledur)
