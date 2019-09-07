@@ -1,0 +1,2 @@
+*.orc.erb linguist-language=Csound
+*.ttl.erb linguist-language=Turtle
