@@ -22,6 +22,7 @@ gisampleready init 0
 gkfirstrun init 1
 gSpath init ""
 gisampledur init 0
+gkreleaseline init 0
 
 instr PathGetter
     gSpath chnget "path"
@@ -47,6 +48,19 @@ instr +FileLoader
     gisampleready = 1
 endin
 
+instr +ReleaseLine
+    ireleasestart = p4
+    ireleaseend   = p5
+    ispeedfinal   = p6
+    ichannel      = p7
+
+    gkreleaseline = line(0, \
+                            (gisampledur * \
+                            (ireleaseend - ireleasestart)) / \
+                            ispeedfinal, \
+                         1)
+endin
+
 instr 1
     if gisampleready == 1 then
         kgain     chnget "gain"
@@ -64,14 +78,38 @@ instr 1
         ; reverse
         kreverse chnget "reverse"
         ; loop times
-        ilooptimes chnget "loop_times"
+        imainlooptimes chnget "loop_times"
         ; start and end points
         istart chnget "start_point"
         iend   chnget "end_point"
+        ; sustain
+        ksustainsection chnget "sustain_section"
+        ksustainstart chnget "sustain_start_point"
+        ksustainend   chnget "sustain_end_point"
+        isusmainlooplimit = imainlooptimes + 1
+        ; release
+        ireleasesection   chnget "release_section"
+        ireleasestart     chnget "release_start_point"
+        ireleaseend       chnget "release_end_point"
+        ireleaselooptimes chnget "release_loop_times"
+
+        kmainloops init 0
+        imainbaserate = <%= base_rate('istart', 'iend') %>
 
         iamp  ampmidi 1
-
         imfreq cpsmidi
+
+        kreleased init 0
+        ireleasebaserate = <%= base_rate('ireleasestart', 'ireleaseend') %>
+        kreleaseloops init 0
+
+        if <%= phase_over('main') %> && \
+           !<%= sustain_on %> && \
+           <%= release_on %> then
+            kreleased = 1
+        else
+            kreleased release
+        endif
 
         <%= VocoderParams.new('speed', 'k').param_process %>
         <%= VocoderParams.new('speed', 'i').param_process %>
@@ -82,19 +120,28 @@ instr 1
                       ienvsus, ienvrel, ienvrelsh, \
                       0
 
-        if (ilooptimes > 0) then
-            klimit line 0, (gisampledur * (iend - istart)) / ispeedfinal, 1
+        if kreleased == 1 then
+            if <%= release_on %> then
+                kmainloops = kmainloops
+                kreleaseloops += <%= kline('ireleasebaserate') %>
+            else
+                kstop = 1
+            endif
+        elseif <%= in_sustain_phase %> then
+            kmainloops = kmainloops
         else
-            klimit = 0
+            kmainloops line 0, (gisampledur * (iend - istart)) / ispeedfinal, 1
         endif
 
         krate = (kspeedfinal / gisampledur)
-        if (istart > 0 || iend < 1) then
-          kratescaled = krate * (1 / (iend - istart))
-          aprepointer phasor kratescaled
-          apointer = (aprepointer * (iend - istart)) + istart
+        if kreleased == 1 then
+            <%= scaled_pointer(phase: 'release') %>
+        elseif <%= in_sustain_phase %> then
+            <%= scaled_pointer(phase: 'sustain', vartype: 'k') %>
+        elseif (istart > 0 || iend < 1) then
+            <%= scaled_pointer %>
         else
-          apointer phasor krate
+            apointer phasor krate
         endif
 
         if kreverse == 1 then
@@ -115,13 +162,15 @@ instr 1
         asigr = apresigr * aenv
 
         kdialdown init 1
-        kloopover init 0
+        kstop init 0
 
-        if (ilooptimes > 0) && (klimit >= ilooptimes - 0.1) then
-            kloopover = 1
+        if (<%= phase_over('main', early: 0.1) %> && \
+            !<%= release_on %> && !<%= sustain_on %>) || \
+           <%= phase_over('release', early: 0.1) %> then
+            kstop = 1
         endif
 
-        if kloopover == 1 then
+        if kstop == 1 then
             kdialdown = kdialdown - 0.3
             if kdialdown < 0 then
                 kdialdown = 0

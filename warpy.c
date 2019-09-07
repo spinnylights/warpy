@@ -29,6 +29,7 @@
 #define CONTROL_PERIOD_FRAMES 64
 #define MIDI_MESSAGE_BUFFER_SIZE 4096
 #define MIDI_CACHE_LENGTH 256
+#define MIN_BOUNDS_SIZE 0.0001
 
 struct scale {
 	const double floor;
@@ -122,6 +123,14 @@ struct param* create_param(MYFLT (*calc)(float), const char* channel)
 	param->result = -100;
 	param->is_cs_current = false;
 	return param;
+}
+
+struct bounds create_bounds(struct param* start, struct param* end)
+{
+	struct bounds bounds;
+	bounds.start = start;
+	bounds.end = end;
+	return bounds;
 }
 
 static MYFLT exp_scale_lower_conv(double n)
@@ -241,6 +250,29 @@ static MYFLT check_scale_range(float scale_arg)
 	return scale;
 }
 
+static MYFLT check_bool(float boolean)
+{
+	if (boolean > 1)
+		boolean = 1;
+	if (boolean < 1)
+		boolean = 0;
+	return boolean;
+}
+
+static MYFLT check_start(float start)
+{
+	if (start < 0)
+		start = 0;
+	return start;
+}
+
+static MYFLT check_end(float end)
+{
+	if (end > 1)
+		end = 0;
+	return end;
+}
+
 struct cache {
 	uint32_t path_int;
 	struct param* gain;
@@ -263,6 +295,13 @@ struct cache {
 	struct param* loop_times;
 	struct param* start_point;
 	struct param* end_point;
+	struct param* sustain_section;
+	struct param* sustain_start_point;
+	struct param* sustain_end_point;
+	struct param* release_section;
+	struct param* release_start_point;
+	struct param* release_end_point;
+	struct param* release_loop_times;
 };
 
 struct cache* create_cache(void)
@@ -290,10 +329,24 @@ struct cache* create_cache(void)
 	cache->env_sustain_level = create_param(NULL, "env_sustain_level");
 	cache->env_release_time  = create_param(NULL, "env_release_time");
 	cache->env_release_shape = create_param(NULL, "env_release_shape");
-	cache->reverse = create_param(NULL, "reverse");
+	cache->reverse = create_param(&check_bool, "reverse");
 	cache->loop_times = create_param(NULL, "loop_times");
-	cache->start_point = create_param(NULL, "start_point");
-	cache->end_point = create_param(NULL, "end_point");
+	cache->start_point = create_param(&check_start, "start_point");
+	cache->end_point   = create_param(&check_end, "end_point");
+	cache->sustain_section     = create_param(&check_bool,
+	                                          "sustain_section");
+	cache->sustain_start_point = create_param(&check_start,
+	                                          "sustain_start_point");
+	cache->sustain_end_point   = create_param(&check_end,
+	                                          "sustain_end_point");
+	cache->release_section     = create_param(&check_bool,
+	                                          "release_section");
+	cache->release_start_point = create_param(&check_start,
+	                                          "release_start_point");
+	cache->release_end_point   = create_param(&check_end,
+	                                          "release_end_point");
+	cache->release_loop_times  = create_param(NULL,
+	                                          "release_loop_times");
 	return cache;
 }
 
@@ -729,24 +782,52 @@ void update_reverse(struct warpy* warpy, bool reverse)
 	update_against_cache(warpy, warpy->cache->reverse, reverse);
 }
 
+void update_sustain_section(struct warpy* warpy, bool sustain_section)
+{
+	update_against_cache(warpy, warpy->cache->sustain_section, sustain_section);
+}
+
+void update_release_section(struct warpy* warpy, bool release_section)
+{
+	update_against_cache(warpy, warpy->cache->release_section, release_section);
+}
+
 void update_loop_times(struct warpy* warpy, unsigned loop_times)
 {
 	update_against_cache(warpy, warpy->cache->loop_times, loop_times);
 }
 
-void update_start_and_end_points(struct warpy* warpy, float start, float end)
+void update_release_loop_times(struct warpy* warpy, unsigned loop_times)
 {
-	start = (MYFLT)start;
-	end = (MYFLT)end;
+	update_against_cache(warpy, warpy->cache->release_loop_times, loop_times);
+}
 
-	if (start < 0)
-		start = 0;
-	if (end > 1)
-		end = 1;
-	if (start >= end) {
-		start = end - 0.03;
-	}
+struct bounds get_main_bounds(struct warpy* warpy)
+{
+	return create_bounds(warpy->cache->start_point,
+	                     warpy->cache->end_point);
+}
 
-	update_against_cache(warpy, warpy->cache->start_point, start);
-	update_against_cache(warpy, warpy->cache->end_point, end);
+struct bounds get_sustain_bounds(struct warpy* warpy)
+{
+	return create_bounds(warpy->cache->sustain_start_point,
+	                     warpy->cache->sustain_end_point);
+}
+
+struct bounds get_release_bounds(struct warpy* warpy)
+{
+	return create_bounds(warpy->cache->release_start_point,
+	                     warpy->cache->release_end_point);
+}
+
+void update_start_and_end_points(struct warpy* warpy,
+                                 float start,
+                                 float end,
+                                 struct bounds bounds)
+{
+	if (start >= end)
+		start = end - MIN_BOUNDS_SIZE;
+
+	update_against_cache(warpy, bounds.start, start);
+	update_against_cache(warpy, bounds.end,   end);
 }

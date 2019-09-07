@@ -11,6 +11,40 @@ module OrcFileERB
     MINCER
   end
 
+  def sustain_on
+    "ksustainsection == 1"
+  end
+
+  def release_on
+    "ireleasesection == 1"
+  end
+
+  def in_sustain_phase
+    "(#{sustain_on} && kmainloops >= isusmainlooplimit && kreleased == 0)"
+  end
+
+  def phase_over(phase, early: 0)
+    "((i#{phase}looptimes > 0) && (k#{phase}loops >= " +
+      "i#{phase}looptimes - (#{early})))"
+  end
+
+  def scaled_pointer(phase: '', vartype: 'i')
+    <<~POINTER
+      kratescaled = krate * (1 / (#{vartype}#{phase}end - #{vartype}#{phase}start))
+      aprepointer phasor kratescaled
+      apointer = (aprepointer * (#{vartype}#{phase}end - #{vartype}#{phase}start))\
+                 + #{vartype}#{phase}start
+    POINTER
+  end
+
+  def base_rate(_start, _end)
+    "gisampledur * (#{_end} - #{_start})"
+  end
+
+  def kline(base_rate)
+    "(1 / (#{base_rate} / kspeedfinal)) / kr"
+  end
+
   class VocoderParams
     attr_reader :vartype, :param
     def initialize(param, vartype)

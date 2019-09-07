@@ -94,6 +94,65 @@ warpy:sample
 	] , [
 		a lv2:InputPort, lv2:ControlPort ;
 		lv2:index <%= index += 1 %> ;
+		lv2:symbol "sustain_section" ;
+		lv2:name "Sustain Section" ;
+		lv2:portProperty lv2:toggled ;
+		lv2:default 0.0 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 1.0 ;
+	] , [
+		a lv2:InputPort, lv2:ControlPort ;
+		lv2:index <%= index += 1 %> ;
+		lv2:symbol "sustain_start_point" ;
+		lv2:name "Sustain Start" ;
+		lv2:default 0.0 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 1.0 ;
+	] , [
+		a lv2:InputPort, lv2:ControlPort ;
+		lv2:index <%= index += 1 %> ;
+		lv2:symbol "sustain_end" ;
+		lv2:name "Sustain End Point" ;
+		lv2:default 1.0 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 1.0 ;
+	] , [
+		a lv2:InputPort, lv2:ControlPort ;
+		lv2:index <%= index += 1 %> ;
+		lv2:symbol "release_section" ;
+		lv2:name "Release Section" ;
+		lv2:portProperty lv2:toggled ;
+		lv2:default 1.0 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 1.0 ;
+	] , [
+		a lv2:InputPort, lv2:ControlPort ;
+		lv2:index <%= index += 1 %> ;
+		lv2:symbol "release_start_point" ;
+		lv2:name "Release Start" ;
+		lv2:default 0.0 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 1.0 ;
+	] , [
+		a lv2:InputPort, lv2:ControlPort ;
+		lv2:index <%= index += 1 %> ;
+		lv2:symbol "release_end_point" ;
+		lv2:name "Release End Point" ;
+		lv2:default 1.0 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 1.0 ;
+	] , [
+		a lv2:InputPort, lv2:ControlPort ;
+		lv2:index <%= index += 1 %> ;
+		lv2:symbol "release_loop_times" ;
+		lv2:name "Release Loop Times" ;
+		lv2:portProperty lv2:integer ;
+		lv2:default 0.0 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 100.0 ;
+	] , [
+		a lv2:InputPort, lv2:ControlPort ;
+		lv2:index <%= index += 1 %> ;
 		lv2:symbol "speed_adjust" ;
 		lv2:name "Speed Adjust" ;
 		lv2:default 0.5 ;

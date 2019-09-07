@@ -22,6 +22,13 @@ enum port_indices {
 	WARPY_END_POINT,
 	WARPY_REVERSE,
 	WARPY_LOOP_TIMES,
+	WARPY_SUSTAIN_SECTION,
+	WARPY_SUSTAIN_START_POINT,
+	WARPY_SUSTAIN_END_POINT,
+	WARPY_RELEASE_SECTION,
+	WARPY_RELEASE_START_POINT,
+	WARPY_RELEASE_END_POINT,
+	WARPY_RELEASE_LOOP_TIMES,
 	WARPY_SPEED_ADJUST,
 	WARPY_SPEED_CENTER,
 	WARPY_SPEED_LOWER_SCALE,
@@ -51,6 +58,13 @@ struct lv2 {
 		float*                   end_point;
 		float*                   reverse;
 		float*                   loop_times;
+		float*                   sustain_section;
+		float*                   sustain_start_point;
+		float*                   sustain_end_point;
+		float*                   release_section;
+		float*                   release_start_point;
+		float*                   release_end_point;
+		float*                   release_loop_times;
 		float*                   speed_adjust;
 		float*                   speed_center;
 		float*                   speed_lower_scale;
@@ -147,6 +161,27 @@ static void connect_port(LV2_Handle instance,
 		case WARPY_LOOP_TIMES:
 			lv2->ports.loop_times = (float*)data;
 			break;
+		case WARPY_SUSTAIN_SECTION:
+			lv2->ports.sustain_section = (float*)data;
+			break;
+		case WARPY_SUSTAIN_START_POINT:
+			lv2->ports.sustain_start_point = (float*)data;
+			break;
+		case WARPY_SUSTAIN_END_POINT:
+			lv2->ports.sustain_end_point = (float*)data;
+			break;
+		case WARPY_RELEASE_SECTION:
+			lv2->ports.release_section = (float*)data;
+			break;
+		case WARPY_RELEASE_START_POINT:
+			lv2->ports.release_start_point = (float*)data;
+			break;
+		case WARPY_RELEASE_END_POINT:
+			lv2->ports.release_end_point = (float*)data;
+			break;
+		case WARPY_RELEASE_LOOP_TIMES:
+			lv2->ports.release_loop_times = (float*)data;
+			break;
 		case WARPY_SPEED_ADJUST:
 			lv2->ports.speed_adjust = (float*)data;
 			break;
@@ -208,11 +243,24 @@ static void update_control_ports(struct lv2* lv2)
 {
 	update_start_and_end_points(lv2->warpy,
 	                            *(lv2->ports.start_point),
-	                            *(lv2->ports.end_point));
+	                            *(lv2->ports.end_point),
+	                            get_main_bounds(lv2->warpy));
+	update_gain(lv2->warpy,   *(lv2->ports.gain));
 	update_reverse(lv2->warpy, *(lv2->ports.reverse));
 	update_loop_times(lv2->warpy, *(lv2->ports.loop_times));
 
-	update_gain(lv2->warpy,   *(lv2->ports.gain));
+	update_sustain_section(lv2->warpy, *(lv2->ports.sustain_section));
+	update_start_and_end_points(lv2->warpy,
+	                            *(lv2->ports.sustain_start_point),
+	                            *(lv2->ports.sustain_end_point),
+	                            get_sustain_bounds(lv2->warpy));
+
+	update_release_section(lv2->warpy, *(lv2->ports.release_section));
+	update_start_and_end_points(lv2->warpy,
+	                            *(lv2->ports.release_start_point),
+	                            *(lv2->ports.release_end_point),
+	                            get_release_bounds(lv2->warpy));
+	update_release_loop_times(lv2->warpy, *(lv2->ports.release_loop_times));
 
 	struct envelope env;
 	env.attack_time   = *(lv2->ports.attack_time);

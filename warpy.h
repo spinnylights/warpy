@@ -24,7 +24,13 @@
 #define VOC_SPEED 0
 #define VOC_PITCH 1
 
+struct param;
 struct warpy;
+struct bounds {
+	struct param* start;
+	struct param* end;
+};
+
 
 struct audio_sample {
 	float left;
@@ -66,6 +72,17 @@ void update_center(struct warpy* warpy, int center, int voc_param);
 void update_envelope(struct warpy* warpy, struct envelope env);
 void update_reverse(struct warpy* warpy, bool reverse);
 void update_loop_times(struct warpy* warpy, unsigned loop_times);
-void update_start_and_end_points(struct warpy* warpy, float start, float end);
+
+struct bounds get_main_bounds(struct warpy* warpy);
+struct bounds get_sustain_bounds(struct warpy* warpy);
+struct bounds get_release_bounds(struct warpy* warpy);
+void update_start_and_end_points(struct warpy* warpy,
+                                 float start,
+                                 float end,
+                                 struct bounds bounds);
+
+void update_sustain_section(struct warpy* warpy, bool sustain_section);
+void update_release_section(struct warpy* warpy, bool release_section);
+void update_release_loop_times(struct warpy* warpy, unsigned loop_times);
 
 #endif
