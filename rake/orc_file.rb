@@ -14,10 +14,10 @@ class OrcFile
   def preprocess
     orc_source = File.open(infile) {|f| f.read}
     orc = ERB.new(orc_source).result(binding)
-    min_newlines = orc.gsub(/\n{2,}/m, "\n")
+    commentless = orc.gsub(/^(\/\/|;).*/, '').gsub(/\/\*.*\*\//m, '').strip
+    min_newlines = commentless.gsub(/\n{2,}/m, "\n")
     stripped = min_newlines.lines.map {|l| l.strip}.join("\n")
-    commentless = stripped.gsub(/\/\*.*\*\//m, '').strip
-    File.open(preproced_file, 'w') {|f| f.puts commentless}
+    File.open(preproced_file, 'w') {|f| f.puts stripped}
   end
 
   def conv_to_hexdump
