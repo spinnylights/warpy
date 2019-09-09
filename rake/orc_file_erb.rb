@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
-module OrcFileERB
+require 'erb'
+
+module ERBUtils
   MINCER_FFT_SIZE = '8184'
   MINCER_DECIM = '8'
 
@@ -100,3 +102,17 @@ module OrcFileERB
     end
   end
 end
+
+class OrcFileERB
+  include ERBUtils
+
+  attr_reader :orc_source
+  def initialize(orc_source)
+    @orc_source = orc_source
+  end
+
+  def result
+    ERB.new(orc_source).result(binding)
+  end
+end
+

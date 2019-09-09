@@ -3,8 +3,6 @@
 require_relative 'orc_file_erb'
 
 class OrcFile
-  include OrcFileERB
-
   attr_reader :infile, :outfile
   def initialize(infile, outfile)
     @infile = infile
@@ -13,11 +11,9 @@ class OrcFile
 
   def preprocess
     orc_source = File.open(infile) {|f| f.read}
-    orc = ERB.new(orc_source).result(binding)
-    commentless = orc.gsub(/^(\/\/|;).*/, '').gsub(/\/\*.*\*\//m, '').strip
-    min_newlines = commentless.gsub(/\n{2,}/m, "\n")
-    stripped = min_newlines.lines.map {|l| l.strip}.join("\n")
-    File.open(preproced_file, 'w') {|f| f.puts stripped}
+    erb_result = OrcFileERB.new(orc_source).result
+    minified   = Orc.new(erb_result).minify!
+    File.open(preproced_file, 'w') {|f| f.puts minified}
   end
 
   def conv_to_hexdump
@@ -26,28 +22,36 @@ class OrcFile
     `rm #{preproced_file}`
   end
 
-  def clean_tmpstrings_from_hexdump
-    outfile_contents = File.open(outfile) {|f| f.read}
-    outfile_tmpless = outfile_contents.gsub('_TMP', '')
-    File.open(outfile, 'w') {|f| f.print outfile_tmpless}
-  end
-
-  def remove_len
-    outfile_contents = File.open(outfile) {|f| f.read}
-    outfile_lines = outfile_contents.lines
-    outfile_lines.pop
-    File.open(outfile, 'w') {|f| f.print outfile_lines.join('')}
-  end
-
-  def change_unsigned_to_const
-    outfile_contents = File.open(outfile) {|f| f.read}
-    outfile_const = outfile_contents.gsub('unsigned', 'const')
-    File.open(outfile, 'w') {|f| f.print outfile_const}
-  end
-
   private
 
   def preproced_file
      infile + '.tmp'
+  end
+end
+
+class Orc
+  attr_reader :source
+  def initialize(source)
+    @source = source
+  end
+
+  def minify!
+    remove_comments
+    minimize_newlines
+    strip
+  end
+
+  private
+
+  def remove_comments
+    @source = source.gsub(/^(\/\/|;).*/, '').gsub(/\/\*.*\*\//m, '').strip
+  end
+
+  def minimize_newlines
+    @source = source.gsub(/\n{2,}/m, "\n")
+  end
+
+  def strip
+    @source = source.lines.map {|l| l.strip}.join("\n")
   end
 end
