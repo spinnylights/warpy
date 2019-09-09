@@ -296,9 +296,11 @@ struct cache {
 	struct param* start_point;
 	struct param* end_point;
 	struct param* sustain_section;
+	struct param* tie_sustain_end_to_main_end;
 	struct param* sustain_start_point;
 	struct param* sustain_end_point;
 	struct param* release_section;
+	struct param* tie_release_start_to_main_end;
 	struct param* release_start_point;
 	struct param* release_end_point;
 	struct param* release_loop_times;
@@ -335,12 +337,16 @@ struct cache* create_cache(void)
 	cache->end_point   = create_param(&check_end, "end_point");
 	cache->sustain_section     = create_param(&check_bool,
 	                                          "sustain_section");
+	cache->tie_sustain_end_to_main_end = create_param(&check_bool,
+	                                         "tie_sustain_end_to_main_end");
 	cache->sustain_start_point = create_param(&check_start,
 	                                          "sustain_start_point");
 	cache->sustain_end_point   = create_param(&check_end,
 	                                          "sustain_end_point");
 	cache->release_section     = create_param(&check_bool,
 	                                          "release_section");
+	cache->tie_release_start_to_main_end = create_param(&check_bool,
+	                                       "tie_release_start_to_main_end");
 	cache->release_start_point = create_param(&check_start,
 	                                          "release_start_point");
 	cache->release_end_point   = create_param(&check_end,
@@ -787,9 +793,25 @@ void update_sustain_section(struct warpy* warpy, bool sustain_section)
 	update_against_cache(warpy, warpy->cache->sustain_section, sustain_section);
 }
 
+void update_tie_sustain_end_to_main_end(struct warpy* warpy,
+                                        bool tie_sustain_end_to_main_end)
+{
+	update_against_cache(warpy,
+	                     warpy->cache->tie_sustain_end_to_main_end,
+	                     tie_sustain_end_to_main_end);
+}
+
 void update_release_section(struct warpy* warpy, bool release_section)
 {
 	update_against_cache(warpy, warpy->cache->release_section, release_section);
+}
+
+void update_tie_release_start_to_main_end(struct warpy* warpy,
+                                          bool tie_release_start_to_main_end)
+{
+	update_against_cache(warpy,
+	                     warpy->cache->tie_release_start_to_main_end,
+	                     tie_release_start_to_main_end);
 }
 
 void update_loop_times(struct warpy* warpy, unsigned loop_times)

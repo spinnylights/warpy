@@ -66,27 +66,37 @@ instr 1
         ; loop times
         imainlooptimes chnget "loop_times"
         ; start and end points
-        istart chnget "start_point"
-        iend   chnget "end_point"
+        kstart chnget "start_point"
+        kend   chnget "end_point"
         ; sustain
         ksustainsection chnget "sustain_section"
-        ksustainstart chnget "sustain_start_point"
-        ksustainend   chnget "sustain_end_point"
+        ksustainstart   chnget "sustain_start_point"
+        ktiesendtomend  chnget "tie_sustain_end_to_main_end"
+        if ktiesendtomend == 1 then
+            ksustainend = kend
+        else
+            ksustainend   chnget "sustain_end_point"
+        endif
         isusmainlooplimit = imainlooptimes + 1
         ; release
-        ireleasesection   chnget "release_section"
-        ireleasestart     chnget "release_start_point"
-        ireleaseend       chnget "release_end_point"
+        kreleasesection   chnget "release_section"
+        ktierstarttomend  chnget "tie_release_start_to_main_end"
+        if ktierstarttomend == 1 then
+            kreleasestart = kend
+        else
+            kreleasestart chnget "release_start_point"
+        endif
+        kreleaseend       chnget "release_end_point"
         ireleaselooptimes chnget "release_loop_times"
 
         kmainloops init 0
-        imainbaserate = <%= base_rate('istart', 'iend') %>
+        kmainbaserate = <%= base_rate('kstart', 'kend') %>
 
         iamp  ampmidi 1
         imfreq cpsmidi
 
         kreleased init 0
-        ireleasebaserate = <%= base_rate('ireleasestart', 'ireleaseend') %>
+        kreleasebaserate = <%= base_rate('kreleasestart', 'kreleaseend') %>
         kreleaseloops init 0
 
         if <%= phase_over('main') %> && \
@@ -108,23 +118,23 @@ instr 1
         if kreleased == 1 then
             if <%= release_on %> then
                 kmainloops = kmainloops
-                kreleaseloops += <%= kline('ireleasebaserate') %>
+                kreleaseloops += <%= kline('kreleasebaserate') %>
             else
                 kstop = 1
             endif
         elseif <%= in_sustain_phase %> then
             kmainloops = kmainloops
         else
-            kmainloops += <%= kline('imainbaserate') %>
+            kmainloops += <%= kline('kmainbaserate') %>
         endif
 
         krate = (kspeedfinal / gisampledur)
         if kreleased == 1 then
-            <%= scaled_pointer(phase: 'release') %>
+            <%= scaled_pointer(phase: 'release', vartype: 'k') %>
         elseif <%= in_sustain_phase %> then
             <%= scaled_pointer(phase: 'sustain', vartype: 'k') %>
-        elseif (istart > 0 || iend < 1) then
-            <%= scaled_pointer %>
+        elseif (kstart > 0 || kend < 1) then
+            <%= scaled_pointer(vartype: 'k') %>
         else
             apointer phasor krate
         endif

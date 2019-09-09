@@ -23,9 +23,11 @@ enum port_indices {
 	WARPY_REVERSE,
 	WARPY_LOOP_TIMES,
 	WARPY_SUSTAIN_SECTION,
+	WARPY_TIE_SUSTAIN_END_TO_MAIN_END,
 	WARPY_SUSTAIN_START_POINT,
 	WARPY_SUSTAIN_END_POINT,
 	WARPY_RELEASE_SECTION,
+	WARPY_TIE_RELEASE_START_TO_MAIN_END,
 	WARPY_RELEASE_START_POINT,
 	WARPY_RELEASE_END_POINT,
 	WARPY_RELEASE_LOOP_TIMES,
@@ -59,9 +61,11 @@ struct lv2 {
 		float*                   reverse;
 		float*                   loop_times;
 		float*                   sustain_section;
+		float*                   tie_sustain_end_to_main_end;
 		float*                   sustain_start_point;
 		float*                   sustain_end_point;
 		float*                   release_section;
+		float*                   tie_release_start_to_main_end;
 		float*                   release_start_point;
 		float*                   release_end_point;
 		float*                   release_loop_times;
@@ -164,6 +168,9 @@ static void connect_port(LV2_Handle instance,
 		case WARPY_SUSTAIN_SECTION:
 			lv2->ports.sustain_section = (float*)data;
 			break;
+		case WARPY_TIE_SUSTAIN_END_TO_MAIN_END:
+			lv2->ports.tie_sustain_end_to_main_end = (float*)data;
+			break;
 		case WARPY_SUSTAIN_START_POINT:
 			lv2->ports.sustain_start_point = (float*)data;
 			break;
@@ -172,6 +179,9 @@ static void connect_port(LV2_Handle instance,
 			break;
 		case WARPY_RELEASE_SECTION:
 			lv2->ports.release_section = (float*)data;
+			break;
+		case WARPY_TIE_RELEASE_START_TO_MAIN_END:
+			lv2->ports.tie_release_start_to_main_end = (float*)data;
 			break;
 		case WARPY_RELEASE_START_POINT:
 			lv2->ports.release_start_point = (float*)data;
@@ -250,12 +260,16 @@ static void update_control_ports(struct lv2* lv2)
 	update_loop_times(lv2->warpy, *(lv2->ports.loop_times));
 
 	update_sustain_section(lv2->warpy, *(lv2->ports.sustain_section));
+	update_tie_sustain_end_to_main_end(lv2->warpy,
+	                             *(lv2->ports.tie_sustain_end_to_main_end));
 	update_start_and_end_points(lv2->warpy,
 	                            *(lv2->ports.sustain_start_point),
 	                            *(lv2->ports.sustain_end_point),
 	                            get_sustain_bounds(lv2->warpy));
 
 	update_release_section(lv2->warpy, *(lv2->ports.release_section));
+	update_tie_release_start_to_main_end(lv2->warpy,
+	                           *(lv2->ports.tie_release_start_to_main_end));
 	update_start_and_end_points(lv2->warpy,
 	                            *(lv2->ports.release_start_point),
 	                            *(lv2->ports.release_end_point),

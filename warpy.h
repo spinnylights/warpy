@@ -82,7 +82,11 @@ void update_start_and_end_points(struct warpy* warpy,
                                  struct bounds bounds);
 
 void update_sustain_section(struct warpy* warpy, bool sustain_section);
+void update_tie_sustain_end_to_main_end(struct warpy* warpy,
+                                        bool tie_sustain_end_to_main_end);
 void update_release_section(struct warpy* warpy, bool release_section);
+void update_tie_release_start_to_main_end(struct warpy* warpy,
+                                          bool tie_release_start_to_main_end);
 void update_release_loop_times(struct warpy* warpy, unsigned loop_times);
 
 #endif

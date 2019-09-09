@@ -16,7 +16,7 @@ module OrcFileERB
   end
 
   def release_on
-    "ireleasesection == 1"
+    "kreleasesection == 1"
   end
 
   def in_sustain_phase

@@ -103,6 +103,15 @@ warpy:sample
 	] , [
 		a lv2:InputPort, lv2:ControlPort ;
 		lv2:index <%= index += 1 %> ;
+		lv2:symbol "tie_sustain_end_to_main_end" ;
+		lv2:name "Tie Sustain End to Main End" ;
+		lv2:portProperty lv2:toggled ;
+		lv2:default 0.0 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 1.0 ;
+	] , [
+		a lv2:InputPort, lv2:ControlPort ;
+		lv2:index <%= index += 1 %> ;
 		lv2:symbol "sustain_start_point" ;
 		lv2:name "Sustain Start" ;
 		lv2:default 0.0 ;
@@ -123,6 +132,15 @@ warpy:sample
 		lv2:name "Release Section" ;
 		lv2:portProperty lv2:toggled ;
 		lv2:default 1.0 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 1.0 ;
+	] , [
+		a lv2:InputPort, lv2:ControlPort ;
+		lv2:index <%= index += 1 %> ;
+		lv2:symbol "tie_release_start_to_main_end" ;
+		lv2:name "Tie Release Start to Main End" ;
+		lv2:portProperty lv2:toggled ;
+		lv2:default 0.0 ;
 		lv2:minimum 0.0 ;
 		lv2:maximum 1.0 ;
 	] , [

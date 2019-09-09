@@ -28,12 +28,12 @@ void play_test(struct warpy* warpy)
 {
 	uint8_t c4_on[] =  {  note_on(0x3c) };
 	uint8_t c4_off[] = { note_off(0x3c) };
-	//uint8_t c3_on[] =  {  note_on(0x30) };
-	//uint8_t c3_off[] = { note_off(0x30) };
-	//uint8_t c5_on[] =  {  note_on(0x48) };
-	//uint8_t c5_off[] = { note_off(0x48) };
-	//uint8_t c6_on[] =  {  note_on(0x54) };
-	//uint8_t c6_off[] = { note_off(0x54) };
+	uint8_t c3_on[] =  {  note_on(0x30) };
+	uint8_t c3_off[] = { note_off(0x30) };
+	uint8_t c5_on[] =  {  note_on(0x48) };
+	uint8_t c5_off[] = { note_off(0x48) };
+	uint8_t c6_on[] =  {  note_on(0x54) };
+	uint8_t c6_off[] = { note_off(0x54) };
 
 	int secs = 18;
 	int length = secs * SAMPLE_RATE;
@@ -71,23 +71,23 @@ void play_test(struct warpy* warpy)
 	pitch_settings_1.lower_scale = 0;
 	pitch_settings_1.upper_scale = 0;
 
-	//struct vocoder_settings pitch_settings_2;
-	//pitch_settings_2.type   = VOC_PITCH;
-	//pitch_settings_2.adjust = 0.6;
-	//pitch_settings_2.center = 60;
-	//pitch_settings_2.lower_scale = 0;
-	//pitch_settings_2.upper_scale = 0;
+	struct vocoder_settings pitch_settings_2;
+	pitch_settings_2.type   = VOC_PITCH;
+	pitch_settings_2.adjust = 0.6;
+	pitch_settings_2.center = 60;
+	pitch_settings_2.lower_scale = 0;
+	pitch_settings_2.upper_scale = 0;
 
 	struct bounds main_bounds = get_main_bounds(warpy);
 	struct bounds sustain_bounds = get_sustain_bounds(warpy);
 	struct bounds release_bounds = get_release_bounds(warpy);
 	double sus_start = 0.233;
 	for (i = 0; i < length; i++) {
-		if (i > 0 * SAMPLE_RATE){
-			speed_settings_1.adjust += 0.00000045;
-			pitch_settings_1.adjust += 0.00000045;
-			sus_start += 0.0000001;
-		}
+		//if (i > 0 * SAMPLE_RATE){
+		//	speed_settings_1.adjust += 0.00000045;
+		//	pitch_settings_1.adjust += 0.00000045;
+		//	sus_start += 0.0000001;
+		//}
 		update_start_and_end_points(warpy,
 					    0.0,
 					    0.26,
@@ -117,7 +117,7 @@ void play_test(struct warpy* warpy)
 			update_reverse(warpy, false);
 			update_sample_path(warpy, "fox_48k.wav");
 			update_vocoder_settings(warpy, speed_settings_2);
-			update_vocoder_settings(warpy, pitch_settings_1);
+			update_vocoder_settings(warpy, pitch_settings_2);
 			update_loop_times(warpy, 1);
 			update_sustain_section(warpy, false);
 			update_release_loop_times(warpy, 1);
@@ -127,43 +127,43 @@ void play_test(struct warpy* warpy)
 			update_reverse(warpy, false);
 			update_sample_path(warpy, "fox_48k.wav");
 			update_vocoder_settings(warpy, speed_settings_2);
-			update_vocoder_settings(warpy, pitch_settings_1);
+			update_vocoder_settings(warpy, pitch_settings_2);
 			update_loop_times(warpy, 1);
 			update_release_loop_times(warpy, 1);
 		}
 
 		if      (i == note_length)
 			send_midi_message(warpy, c4_on, 3);
-		else if (i == note_length*6 - 1)
+		else if (i == note_length*2 - 1)
 			send_midi_message(warpy, c4_off, 3);
-		//else if (i == note_length*2)
-		//	send_midi_message(warpy, c3_on, 3);
-		//else if (i == note_length*3 - 1)
-		//	send_midi_message(warpy, c3_off, 3);
-		//else if (i == note_length*3)
-		//	send_midi_message(warpy, c5_on, 3);
-		//else if (i == note_length*4 - 1)
-		//	send_midi_message(warpy, c5_off, 3);
-		//else if (i == note_length*4)
-		//	send_midi_message(warpy, c6_on, 3);
-		//else if (i == note_length*5 - 1)
-		//	send_midi_message(warpy, c6_off, 3);
-		//else if (i == note_length*6)
-		//	send_midi_message(warpy, c4_on, 3);
-		//else if (i == note_length*7 - 1)
-		//	send_midi_message(warpy, c4_off, 3);
-		//else if (i == note_length*7)
-		//	send_midi_message(warpy, c3_on, 3);
-		//else if (i == note_length*8 - 1)
-		//	send_midi_message(warpy, c3_off, 3);
-		//else if (i == note_length*8)
-		//	send_midi_message(warpy, c5_on, 3);
-		//else if (i == note_length*9 - 1)
-		//	send_midi_message(warpy, c5_off, 3);
-		//else if (i == note_length*9)
-		//	send_midi_message(warpy, c6_on, 3);
-		//else if (i == note_length*10 - 1)
-		//	send_midi_message(warpy, c6_off, 3);
+		else if (i == note_length*2)
+			send_midi_message(warpy, c3_on, 3);
+		else if (i == note_length*3 - 1)
+			send_midi_message(warpy, c3_off, 3);
+		else if (i == note_length*3)
+			send_midi_message(warpy, c5_on, 3);
+		else if (i == note_length*4 - 1)
+			send_midi_message(warpy, c5_off, 3);
+		else if (i == note_length*4)
+			send_midi_message(warpy, c6_on, 3);
+		else if (i == note_length*5 - 1)
+			send_midi_message(warpy, c6_off, 3);
+		else if (i == note_length*6)
+			send_midi_message(warpy, c4_on, 3);
+		else if (i == note_length*7 - 1)
+			send_midi_message(warpy, c4_off, 3);
+		else if (i == note_length*7)
+			send_midi_message(warpy, c3_on, 3);
+		else if (i == note_length*8 - 1)
+			send_midi_message(warpy, c3_off, 3);
+		else if (i == note_length*8)
+			send_midi_message(warpy, c5_on, 3);
+		else if (i == note_length*9 - 1)
+			send_midi_message(warpy, c5_off, 3);
+		else if (i == note_length*9)
+			send_midi_message(warpy, c6_on, 3);
+		else if (i == note_length*10 - 1)
+			send_midi_message(warpy, c6_off, 3);
 
 		struct audio_sample sample = gen_sample(warpy);
 		int sample_addr = i * get_channel_count(warpy);
