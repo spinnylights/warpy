@@ -50,10 +50,20 @@ instr +FileLoader
     gisampleready = 1
 endin
 
+gitabsize = 2 ^ 17
+gisine     ftgen 0, 0, gitabsize, 10, 1
+gitriangle ftgen 0, 0, gitabsize, 7, -1, gitabsize/2, 1, gitabsize/2, -1
+gisquare   ftgen 0, 0, gitabsize, 7, 1, gitabsize/2, 1, 0, -1, gitabsize/2, -1
+giwacky    ftgen 0, 0, 131072,    7, 0, 10662, -0.695541, 6766, 0.624639, 7634, -0.217517, 12296, 0.894129, 5166, 0.210780, 11336, 0.318255, 3794, -0.677895, 34784, 0.791466, 5988, -0.456529, 7404, -0.179018, 2240, -0.769329, 18330, 0.340712, 4674, 0
+
 instr 1
     if gisampleready == 1 then
-        kgain     chnget "gain"
+        kgain chnget "gain"
+        ; bpm
+        kbps chnget "bps"
+        ; speed
         <%= VocoderParams.new('speed', 'k').params %>
+        ; pitch
         <%= VocoderParams.new('pitch', 'k').params %>
         ; envelope
         ienvatt   chnget "env_attack_time"
@@ -90,6 +100,30 @@ instr 1
         endif
         kreleaseend       chnget "release_end_point"
         ireleaselooptimes chnget "release_loop_times"
+        ; vibrato
+        kvibamp      chnget "vibrato_amp"
+        kvibtempotog chnget "vibrato_tempo_toggle"
+        if kvibamp > 0 then
+            if kvibtempotog == 1 then
+                kvibtempofrac chnget "vibrato_tempo_fraction"
+                kvibfreq = kbps * kvibtempofrac
+            else
+                kvibfreq chnget "vibrato_freq"
+            endif
+            kvibwave chnget "vibrato_waveform_type"
+            if kvibwave == 2 then
+                kvibtable = gitriangle
+            elseif kvibwave == 3 then
+                kvibtable = gisquare
+            elseif kvibwave == 4 then
+                kvibtable = giwacky
+            else
+                kvibtable = gisine
+            endif
+            kvib = tablekt:k(phasor:k(kvibfreq), kvibtable, 1) * kvibamp
+        else
+            kvib = 0
+        endif
 
         kmainloops init 0
         kmainbaserate = <%= base_rate('kstart', 'kend') %>
@@ -111,6 +145,7 @@ instr 1
 
         <%= VocoderParams.new('speed', 'k').param_process %>
         <%= VocoderParams.new('pitch', 'k').param_process %>
+        printk 0.25, kpitchfinal
 
         aenv transegr 0,       ienvatt, ienvattsh, \
                       1,       ienvdec, ienvdecsh, \

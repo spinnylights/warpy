@@ -230,6 +230,11 @@ static MYFLT calc_gain(float norm_gain)
 	return (MYFLT)norm_gain * 2;
 }
 
+static MYFLT bpm_to_bps(float bps)
+{
+	return bps / 60;
+}
+
 static MYFLT check_midi_note_range(float center_arg)
 {
 	MYFLT center = center_arg;
@@ -273,9 +278,50 @@ static MYFLT check_end(float end)
 	return end;
 }
 
+#define VIB_AMP_MAX 0.35
+
+static MYFLT scale_vibrato_amp(float amp)
+{
+	return (MYFLT)amp * VIB_AMP_MAX;
+}
+
+#define VIB_WAVEFORM_COUNT 4
+
+static MYFLT check_vib_wave_type(float type)
+{
+	unsigned type_int = (unsigned)type;
+	if (type_int < 1)
+		type_int = 1;
+	else if (type_int > VIB_WAVEFORM_COUNT)
+		type_int = VIB_WAVEFORM_COUNT;
+	return type_int;
+}
+
+#define VIB_FREQ_MAX 21
+
+static MYFLT scale_vibrato_freq(float freq)
+{
+	return (MYFLT)freq * VIB_FREQ_MAX;
+}
+
+static const unsigned tempo_frac_denoms[] = {1,  2,  3,  4,  6,  8,
+                                             9, 12, 16, 27, 32, 81};
+static const unsigned tempo_frac_denoms_len = sizeof(tempo_frac_denoms) /
+                                              sizeof(tempo_frac_denoms[0]);
+static const unsigned last_tempo_denom_indx = tempo_frac_denoms_len - 1;
+static MYFLT get_vib_tempo_frac(float denom_indx)
+{
+	unsigned denom_indx_int = (unsigned)denom_indx;
+	unsigned max_tempo_denom = tempo_frac_denoms[last_tempo_denom_indx];
+	if (denom_indx_int > max_tempo_denom)
+		denom_indx_int = max_tempo_denom;
+	return tempo_frac_denoms[denom_indx_int];
+}
+
 struct cache {
 	uint32_t path_int;
 	struct param* gain;
+	struct param* bps;
 	struct param* speed_adjust;
 	struct param* speed_center;
 	struct param* speed_lower_scale;
@@ -304,6 +350,11 @@ struct cache {
 	struct param* release_start_point;
 	struct param* release_end_point;
 	struct param* release_loop_times;
+	struct param* vibrato_amp;
+	struct param* vibrato_waveform_type;
+	struct param* vibrato_tempo_toggle;
+	struct param* vibrato_freq;
+	struct param* vibrato_tempo_fraction;
 };
 
 struct cache* create_cache(void)
@@ -324,6 +375,7 @@ struct cache* create_cache(void)
 	cache->pitch_upper_scale = create_param(&check_scale_range,
 	                                        "pitch_upper_scale");
 	cache->gain = create_param(&calc_gain, "gain");
+	cache->bps = create_param(&bpm_to_bps, "bps");
 	cache->env_attack_time   = create_param(NULL, "env_attack_time");
 	cache->env_attack_shape  = create_param(NULL, "env_attack_shape");
 	cache->env_decay_time    = create_param(NULL, "env_decay_time");
@@ -353,6 +405,16 @@ struct cache* create_cache(void)
 	                                          "release_end_point");
 	cache->release_loop_times  = create_param(NULL,
 	                                          "release_loop_times");
+	cache->vibrato_amp = create_param(&scale_vibrato_amp,
+	                                  "vibrato_amp");
+	cache->vibrato_waveform_type = create_param(&check_vib_wave_type,
+	                                             "vibrato_waveform_type");
+	cache->vibrato_tempo_toggle = create_param(&check_bool,
+	                                           "vibrato_tempo_toggle");
+	cache->vibrato_freq = create_param(&scale_vibrato_freq,
+	                                   "vibrato_freq");
+	cache->vibrato_tempo_fraction = create_param(&get_vib_tempo_frac,
+	                                             "vibrato_tempo_fraction");
 	return cache;
 }
 
@@ -758,6 +820,11 @@ void update_gain(struct warpy* warpy, float norm_gain)
 	update_against_cache(warpy, warpy->cache->gain, norm_gain);
 }
 
+void update_bpm(struct warpy* warpy, float bpm)
+{
+	update_against_cache(warpy, warpy->cache->bps, bpm);
+}
+
 void update_envelope(struct warpy* warpy, struct envelope env)
 {
 	update_against_cache(warpy,
@@ -852,4 +919,29 @@ void update_start_and_end_points(struct warpy* warpy,
 
 	update_against_cache(warpy, bounds.start, start);
 	update_against_cache(warpy, bounds.end,   end);
+}
+
+void update_vibrato_amp(struct warpy* warpy, float amp)
+{
+	update_against_cache(warpy, warpy->cache->vibrato_amp, amp);
+}
+
+void update_vibrato_waveform_type(struct warpy* warpy, unsigned waveform_type)
+{
+	update_against_cache(warpy, warpy->cache->vibrato_waveform_type, waveform_type);
+}
+
+void update_vibrato_tempo_toggle(struct warpy* warpy, bool tempo_toggle)
+{
+	update_against_cache(warpy, warpy->cache->vibrato_tempo_toggle, tempo_toggle);
+}
+
+void update_vibrato_freq(struct warpy* warpy, float freq)
+{
+	update_against_cache(warpy, warpy->cache->vibrato_freq, freq);
+}
+
+void update_vibrato_tempo_fraction(struct warpy* warpy, unsigned tempo_fraction)
+{
+	update_against_cache(warpy, warpy->cache->vibrato_tempo_fraction, tempo_fraction);
 }

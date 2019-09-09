@@ -68,6 +68,7 @@ void update_sample_path(struct warpy* warpy, char* path);
 void update_vocoder_settings(struct warpy* warpy,
                              const struct vocoder_settings settings);
 void update_gain(struct warpy* warpy, float norm_gain);
+void update_bpm(struct warpy* warpy, float bpm);
 void update_center(struct warpy* warpy, int center, int voc_param);
 void update_envelope(struct warpy* warpy, struct envelope env);
 void update_reverse(struct warpy* warpy, bool reverse);
@@ -88,5 +89,10 @@ void update_release_section(struct warpy* warpy, bool release_section);
 void update_tie_release_start_to_main_end(struct warpy* warpy,
                                           bool tie_release_start_to_main_end);
 void update_release_loop_times(struct warpy* warpy, unsigned loop_times);
+void update_vibrato_amp(struct warpy* warpy, float amp);
+void update_vibrato_waveform_type(struct warpy* warpy, unsigned waveform_type);
+void update_vibrato_tempo_toggle(struct warpy* warpy, bool tempo_toggle);
+void update_vibrato_freq(struct warpy* warpy, float freq);
+void update_vibrato_tempo_fraction(struct warpy* warpy, unsigned tempo_fraction);
 
 #endif

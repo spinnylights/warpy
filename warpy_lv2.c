@@ -16,6 +16,7 @@
 
 enum port_indices {
 	WARPY_IN,
+	WARPY_BPM,
 	WARPY_OUT_L,
 	WARPY_OUT_R,
 	WARPY_START_POINT,
@@ -39,6 +40,11 @@ enum port_indices {
 	WARPY_PITCH_CENTER,
 	WARPY_PITCH_LOWER_SCALE,
 	WARPY_PITCH_UPPER_SCALE,
+	WARPY_VIBRATO_AMP,
+	WARPY_VIBRATO_WAVEFORM_TYPE,
+	WARPY_VIBRATO_FREQ,
+	WARPY_VIBRATO_TEMPO_TOGGLE,
+	WARPY_VIBRATO_TEMPO_FRACTION,
 	WARPY_ATTACK_TIME,
 	WARPY_ATTACK_SHAPE,
 	WARPY_DECAY_TIME,
@@ -54,6 +60,7 @@ struct lv2 {
 
 	struct {
 		const LV2_Atom_Sequence* in;
+		float*                   bpm;
 		float*                   out_l;
 		float*                   out_r;
 		float*                   start_point;
@@ -77,6 +84,11 @@ struct lv2 {
 		float*                   pitch_center;
 		float*                   pitch_lower_scale;
 		float*                   pitch_upper_scale;
+		float*                   vibrato_amp;
+		float*                   vibrato_waveform_type;
+		float*                   vibrato_freq;
+		float*                   vibrato_tempo_toggle;
+		float*                   vibrato_tempo_fraction;
 		float*                   attack_time;
 		float*                   attack_shape;
 		float*                   decay_time;
@@ -147,6 +159,9 @@ static void connect_port(LV2_Handle instance,
 		case WARPY_IN:
 			lv2->ports.in = (const LV2_Atom_Sequence*)data;
 			break;
+		case WARPY_BPM:
+			lv2->ports.bpm = (float*)data;
+			break;
 		case WARPY_OUT_L:
 			lv2->ports.out_l = (float*)data;
 			break;
@@ -216,6 +231,21 @@ static void connect_port(LV2_Handle instance,
 		case WARPY_PITCH_UPPER_SCALE:
 			lv2->ports.pitch_upper_scale = (float*)data;
 			break;
+		case WARPY_VIBRATO_AMP:
+			lv2->ports.vibrato_amp = (float*)data;
+			break;
+		case WARPY_VIBRATO_WAVEFORM_TYPE:
+			lv2->ports.vibrato_waveform_type = (float*)data;
+			break;
+		case WARPY_VIBRATO_FREQ:
+			lv2->ports.vibrato_freq = (float*)data;
+			break;
+		case WARPY_VIBRATO_TEMPO_TOGGLE:
+			lv2->ports.vibrato_tempo_toggle = (float*)data;
+			break;
+		case WARPY_VIBRATO_TEMPO_FRACTION:
+			lv2->ports.vibrato_tempo_fraction = (float*)data;
+			break;
 		case WARPY_ATTACK_TIME:
 			lv2->ports.attack_time = (float*)data;
 			break;
@@ -251,6 +281,7 @@ static void activate(LV2_Handle instance)
 
 static void update_control_ports(struct lv2* lv2)
 {
+	update_bpm(lv2->warpy, *(lv2->ports.bpm));
 	update_start_and_end_points(lv2->warpy,
 	                            *(lv2->ports.start_point),
 	                            *(lv2->ports.end_point),
@@ -275,6 +306,15 @@ static void update_control_ports(struct lv2* lv2)
 	                            *(lv2->ports.release_end_point),
 	                            get_release_bounds(lv2->warpy));
 	update_release_loop_times(lv2->warpy, *(lv2->ports.release_loop_times));
+
+	update_vibrato_amp(lv2->warpy, *(lv2->ports.vibrato_amp));
+	update_vibrato_waveform_type(lv2->warpy,
+	                             *(lv2->ports.vibrato_waveform_type));
+	update_vibrato_freq(lv2->warpy, *(lv2->ports.vibrato_freq));
+	update_vibrato_tempo_toggle(lv2->warpy,
+	                           *(lv2->ports.vibrato_tempo_toggle));
+	update_vibrato_tempo_fraction(lv2->warpy,
+	                             *(lv2->ports.vibrato_tempo_fraction));
 
 	struct envelope env;
 	env.attack_time   = *(lv2->ports.attack_time);

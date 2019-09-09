@@ -8,7 +8,7 @@ module ERBUtils
 
   def mincer_out(file_channel)
     <<~MINCER
-      mincer asamplepos, iamp*kgain, kpitchfinal, #{file_channel}, 1,\
+      mincer asamplepos, iamp*kgain, kpitchfinal+kvib, #{file_channel}, 1,\
              #{MINCER_FFT_SIZE}, #{MINCER_DECIM}
     MINCER
   end
