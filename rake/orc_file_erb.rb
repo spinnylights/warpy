@@ -7,10 +7,11 @@ module ERBUtils
   MINCER_DECIM = '8'
 
   def mincer_out(file_channel, pitch_mod=0)
-    <<~MINCER
-      mincer asamplepos, iamp*kgain, kpitchfinal+kvib+(#{pitch_mod}), \
-             #{file_channel}, 1, #{MINCER_FFT_SIZE}, #{MINCER_DECIM}
-    MINCER
+    "mincer #{mincer_args(file_channel, pitch_mod)}"
+  end
+
+  def mincer_out_func(file_channel, pitch_mod=0)
+    "mincer:a(#{mincer_args(file_channel, pitch_mod)})"
   end
 
   def sustain_on
@@ -32,19 +33,14 @@ module ERBUtils
 
   def scaled_pointer(phase: '', vartype: 'i')
     <<~POINTER
-      kratescaled = krate * (1 / (#{vartype}#{phase}end - #{vartype}#{phase}start))
-      aprepointer phasor kratescaled
-      apointer = (aprepointer * (#{vartype}#{phase}end - #{vartype}#{phase}start))\
-                 + #{vartype}#{phase}start
+      apointer = (phasor:a(krate * (1 / (#{vartype}#{phase}end - \
+                 #{vartype}#{phase}start))) * (#{vartype}#{phase}end - \
+                 #{vartype}#{phase}start)) + #{vartype}#{phase}start
     POINTER
   end
 
-  def base_rate(_start, _end)
-    "gisampledur * (#{_end} - #{_start})"
-  end
-
-  def kline(base_rate)
-    "(1 / (#{base_rate} / kspeedfinal)) / kr"
+  def kline(_start, _end)
+    "(1 / (gisampledur * (#{_end} - #{_start}) / kspeedfinal)) / kr"
   end
 
   def chorus_var_name(type, position, id, channel='')
@@ -86,6 +82,11 @@ module ERBUtils
       end
     end
     return source
+  end
+
+  def mincer_args(file_channel, pitch_mod)
+      "asamplepos, iamp*kgain, kpitchfinal+kvib+(#{pitch_mod}), \ \n" +
+      "#{file_channel}, 1, #{MINCER_FFT_SIZE}, #{MINCER_DECIM}"
   end
 
   class VocoderParams

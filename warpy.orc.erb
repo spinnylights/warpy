@@ -102,11 +102,10 @@ instr 1
         ireleaselooptimes chnget "release_loop_times"
         ; vibrato
         kvibamp      chnget "vibrato_amp"
-        kvibtempotog chnget "vibrato_tempo_toggle"
         if kvibamp > 0 then
+            kvibtempotog chnget "vibrato_tempo_toggle"
             if kvibtempotog == 1 then
-                kvibtempofrac chnget "vibrato_tempo_fraction"
-                kvibfreq = kbps * kvibtempofrac
+                kvibfreq = chnget:k("vibrato_tempo_fraction") * kbps
             else
                 kvibfreq chnget "vibrato_freq"
             endif
@@ -126,7 +125,6 @@ instr 1
         endif
         ; chorus
         kchorusvoices chnget "chorus_voices"
-        <%= chorus_params(amount_on: 0) %>
         if kchorusvoices > 0 then
             kchorusmixcenter chnget "chorus_mix_center"
             kchorusmixsides  chnget "chorus_mix_sides"
@@ -142,14 +140,11 @@ instr 1
             kchorusmixsides  = 0
         endif
 
-        kmainloops init 0
-        kmainbaserate = <%= base_rate('kstart', 'kend') %>
-
         iamp  ampmidi 1
         imfreq cpsmidi
 
+        kmainloops init 0
         kreleased init 0
-        kreleasebaserate = <%= base_rate('kreleasestart', 'kreleaseend') %>
         kreleaseloops init 0
 
         if <%= phase_over('main') %> && \
@@ -171,14 +166,14 @@ instr 1
         if kreleased == 1 then
             if <%= release_on %> then
                 kmainloops = kmainloops
-                kreleaseloops += <%= kline('kreleasebaserate') %>
+                kreleaseloops += <%= kline('kreleasestart', 'kreleaseend') %>
             else
                 kstop = 1
             endif
         elseif <%= in_sustain_phase %> then
             kmainloops = kmainloops
         else
-            kmainloops += <%= kline('kmainbaserate') %>
+            kmainloops += <%= kline('kstart', 'kend') %>
         endif
 
         krate = (kspeedfinal / gisampledur)
@@ -199,28 +194,22 @@ instr 1
         endif
 
         if gistereo == 1 then
-            acenterl <%= mincer_out('gileftchan') %>
-            acenterr <%= mincer_out('girightchan') %>
+            if kchorusvoices > 0 then
+                acenterl = <%= mincer_out_func('gileftchan') %> * kchorusmixcenter
+                acenterr = <%= mincer_out_func('girightchan') %> * kchorusmixcenter
+            else
+                asigl = <%= mincer_out_func('gileftchan') %> * aenv
+                asigr = <%= mincer_out_func('girightchan') %> * aenv
+            endif
         else
-            acenterl <%= mincer_out('gileftchan') %>
-            acenterr = acenterl
+            if kchorusvoices > 0 then
+                acenterl = <%= mincer_out_func('gileftchan') %> * kchorusmixcenter
+                acenterr = acenterl
+            else
+                asigl = <%= mincer_out_func('gileftchan') %> * aenv
+                asigr = asigl
+            endif
         endif
-
-        asigabove1l = 0
-        asigbelow1l = 0
-        asigabove1r = 0
-        asigbelow1r = 0
-        asigabove2l = 0
-        asigbelow2l = 0
-        asigabove2r = 0
-        asigbelow2r = 0
-        asigabove3l = 0
-        asigbelow3l = 0
-        asigabove3r = 0
-        asigbelow3r = 0
-
-        asidesl = 0
-        asidesr = 0
 
         if gistereo == 1 then
             irightchan = girightchan
@@ -253,18 +242,22 @@ instr 1
             asigbelow3r = avocbelow3 * kchorusspreadbelow3r;
         endif
 
-        if kchorusvoices > 0 then
-            asidesl = asigabove1l + asigbelow1l + asigabove2l + \
-                      asigbelow2l + asigabove3l + asigbelow3l
-            asidesr = asigabove1r + asigbelow1r + asigabove2r + \
-                      asigbelow2r + asigabove3r + asigbelow3r
+        if kchorusvoices == 1 then
+            asigl = ((asigabove1l + asigbelow1l)*kchorusmixsides + acenterl) * aenv
+            asigr = ((asigabove1r + asigbelow1r)*kchorusmixsides + acenterr) * aenv
+        elseif kchorusvoices == 2 then
+            asigl = ((asigabove1l + asigbelow1l + asigabove2l + asigbelow2l) *
+                    kchorusmixsides + acenterl) * aenv
+            asigr = ((asigabove1r + asigbelow1r + asigabove2r + asigbelow2r) *
+                    kchorusmixsides + acenterr) * aenv
+        elseif kchorusvoices == 3 then
+            asigl = ((asigabove1l + asigbelow1l + asigabove2l + \
+                       asigbelow2l + asigabove3l + asigbelow3l) * \
+                       kchorusmixsides + acenterl) * aenv
+            asigr = ((asigabove1r + asigbelow1r + asigabove2r + \
+                       asigbelow2r + asigabove3r + asigbelow3r) * \
+                       kchorusmixsides + acenterr) * aenv
         endif
-
-        apresigl = asidesl*kchorusmixsides + acenterl*kchorusmixcenter
-        apresigr = asidesr*kchorusmixsides + acenterr*kchorusmixcenter
-
-        asigl = apresigl * aenv
-        asigr = apresigr * aenv
 
         kdialdown init 1
         kstop init 0
@@ -287,4 +280,3 @@ instr 1
         outs asigl, asigr
     endif
 endin
-
