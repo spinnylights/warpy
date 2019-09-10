@@ -107,33 +107,11 @@ module ERBUtils
       VOC
     end
 
-    def param_process
+    def vocparam
       <<~VOC
-        #{prefix}diff = imfreq / cpsmidinn(#{prefix}center)
-
-        if #{prefix}diff == 1 then
-            #{prefix}scaled = 1
-        else
-            if #{prefix}diff > 1 then
-                if #{prefix}upperscale < 0 then
-                    #{prefix}upperscale = abs(#{prefix}upperscale)
-                    #{prefix}diff = 1 / #{prefix}diff
-                endif
-                #{prefix}scaled = 1 + ((#{prefix}diff - 1) * #{prefix}upperscale)
-            else
-                if #{prefix}lowerscale < 0 then
-                    #{prefix}lowerscale = abs(#{prefix}lowerscale)
-                    #{prefix}diff = 1 / #{prefix}diff
-                endif
-                #{prefix}scaled = 1 + ((#{prefix}diff - 1) * #{prefix}lowerscale)
-            endif
-        endif
-
-        #{prefix}final = #{prefix}scaled * #{prefix}adjust
-
-        if #{prefix}final < #{VOC_MIN} then
-            #{prefix}final = #{VOC_MIN}
-        endif
+        #{prefix}final vocparam #{prefix}adjust, #{prefix}center, \
+                                #{prefix}lowerscale, #{prefix}upperscale, \
+                                imfreq
       VOC
     end
 

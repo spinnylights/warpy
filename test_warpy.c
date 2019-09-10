@@ -42,41 +42,41 @@ void play_test(struct warpy* warpy)
 	float* samples = (float*)calloc(samples_length, sizeof(float));
 	int i;
 	struct envelope env;
-	env.attack_time   = 0.001;
+	env.attack_time   = 0.01;
 	env.attack_shape  = 4;
 	env.decay_time    = 0.5;
 	env.decay_shape   = -4;
 	env.sustain_level = 0.5;
-	env.release_time  = 0;
+	env.release_time  = 0.01;
 	env.release_shape = 4;
 
 	struct vocoder_settings speed_settings_1;
 	speed_settings_1.type   = VOC_SPEED;
-	speed_settings_1.adjust = 0.3;
+	speed_settings_1.adjust = 0.5;
 	speed_settings_1.center = 60;
-	speed_settings_1.lower_scale = 0;
-	speed_settings_1.upper_scale = 0;
+	speed_settings_1.lower_scale = -1;
+	speed_settings_1.upper_scale = 1;
 
 	struct vocoder_settings speed_settings_2;
 	speed_settings_2.type   = VOC_SPEED;
-	speed_settings_2.adjust = 0.3;
+	speed_settings_2.adjust = 0.5;
 	speed_settings_2.center = 60;
-	speed_settings_2.lower_scale = 0;
-	speed_settings_2.upper_scale = 0;
+	speed_settings_2.lower_scale = -1;
+	speed_settings_2.upper_scale = 1;
 
 	struct vocoder_settings pitch_settings_1;
 	pitch_settings_1.type   = VOC_PITCH;
 	pitch_settings_1.adjust = 0.5;
 	pitch_settings_1.center = 60;
-	pitch_settings_1.lower_scale = 0;
-	pitch_settings_1.upper_scale = 0;
+	pitch_settings_1.lower_scale = -1;
+	pitch_settings_1.upper_scale = 1;
 
 	struct vocoder_settings pitch_settings_2;
 	pitch_settings_2.type   = VOC_PITCH;
 	pitch_settings_2.adjust = 0.5;
 	pitch_settings_2.center = 60;
-	pitch_settings_2.lower_scale = 0;
-	pitch_settings_2.upper_scale = 0;
+	pitch_settings_2.lower_scale = -1;
+	pitch_settings_2.upper_scale = 1;
 
 	struct bounds main_bounds = get_main_bounds(warpy);
 	struct bounds sustain_bounds = get_sustain_bounds(warpy);
@@ -117,7 +117,7 @@ void play_test(struct warpy* warpy)
 			update_vibrato_tempo_toggle(warpy, false);
 			update_vibrato_freq(warpy, 0.05);
 			update_vibrato_tempo_fraction(warpy, 12);
-			update_chorus_voices(warpy, 1);
+			update_chorus_voices(warpy, 0);
 			update_chorus_mix(warpy, 0.5);
 			update_chorus_detune(warpy, 0.5);
 			update_chorus_stereo_spread(warpy, 0.5);
@@ -133,7 +133,7 @@ void play_test(struct warpy* warpy)
 			update_loop_times(warpy, 1);
 			update_sustain_section(warpy, false);
 			update_release_loop_times(warpy, 1);
-			update_chorus_voices(warpy, 3);
+			update_chorus_voices(warpy, 0);
 			update_chorus_mix(warpy, 1);
 			update_chorus_detune(warpy, 1);
 			update_chorus_stereo_spread(warpy, 0.5);

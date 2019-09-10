@@ -836,6 +836,11 @@ static void set_params(struct warpy* warpy,
 	csoundSetParams(csound, params);
 }
 
+static inline void register_opcodes(CSOUND* csound)
+{
+	csoundSetOption(csound, "--opcode-lib=./opcodes/libvocparam.so");
+}
+
 bool start_warpy(struct warpy* warpy)
 {
 	CSOUND* csound = warpy->csound;
@@ -843,6 +848,7 @@ bool start_warpy(struct warpy* warpy)
 	set_up_midi(csound);
 	set_up_audio(csound);
 	set_params(warpy, csound, CONTROL_PERIOD_FRAMES);
+	register_opcodes(csound);
 	int orcstatus = csoundCompileOrc(csound, WARPY_ORC);
 	if (!ensure_status(orcstatus,
 	                   "Orchestra did not compile\n",
