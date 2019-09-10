@@ -1202,10 +1202,7 @@ void update_chorus_detune(struct warpy* warpy, float detune)
 	}
 }
 
-static double side_spread_pan(double spread, double distance)
-{
-	return spread*distance + 0.5;
-}
+#define SIDE_SPREAD_PAN(spread, distance) (spread*distance + 0.5)
 
 static const double one_sixth = (double)1/6;
 static const double one_third = (double)1/3;
@@ -1214,12 +1211,12 @@ void update_chorus_stereo_spread(struct warpy* warpy, float spread)
 {
 	check_cache(warpy->cache->chorus_spread, spread);
 	if (!warpy->cache->chorus_spread->is_cs_current) {
-		double above_1 = side_spread_pan( one_sixth, spread);
-		double below_1 = side_spread_pan(-one_sixth, spread);
-		double above_2 = side_spread_pan( one_third, spread);
-		double below_2 = side_spread_pan(-one_third, spread);
-		double above_3 = side_spread_pan( 0.5, spread);
-		double below_3 = side_spread_pan(-0.5, spread);
+		double above_1 = SIDE_SPREAD_PAN( one_sixth, spread);
+		double below_1 = SIDE_SPREAD_PAN(-one_sixth, spread);
+		double above_2 = SIDE_SPREAD_PAN( one_third, spread);
+		double below_2 = SIDE_SPREAD_PAN(-one_third, spread);
+		double above_3 = SIDE_SPREAD_PAN( 0.5, spread);
+		double below_3 = SIDE_SPREAD_PAN(-0.5, spread);
 		update_against_cache(warpy,
 		                     warpy->cache->chorus_spread_above_1_l,
 		                     above_1);
