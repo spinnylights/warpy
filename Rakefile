@@ -65,6 +65,12 @@ task 'test_warpy' => [:clean, 'test_warpy.o', 'warpy.o'] do |t|
   sh "#{COMPILER} #{FLAGS} #{TEST_FLAGS} test_warpy.o warpy.o #{LIBS} #{TEST_LIBS} -o #{t.name}"
 end
 
+task 'test_warpy_profile' => [:clean, ORC_OUTFILE, 'warpy.c', 'test_warpy.c'] do |t|
+  sh "#{COMPILER} #{FLAGS} #{PROD_FLAGS} -fprofile-generate test_warpy.c warpy.c #{LIBS} #{TEST_LIBS} -o instrumented"
+  sh "./instrumented"
+  sh "#{COMPILER} #{FLAGS} #{PROD_FLAGS} -fprofile-use test_warpy.c warpy.c #{LIBS} #{TEST_LIBS} -o test_warpy_profiled"
+end
+
 file 'warpy.so' => [:clean, ORC_OUTFILE, 'warpy.c', 'warpy_lv2.c', 'warpy.ttl'] do |t|
   sh "#{COMPILER} #{FLAGS} #{PROD_FLAGS} -c -fpic warpy_lv2.c warpy.c"
   sh "#{COMPILER} #{FLAGS} #{PROD_FLAGS} -shared -o warpy.so warpy_lv2.o warpy.o #{LIBS}"
