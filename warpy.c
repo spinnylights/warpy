@@ -569,6 +569,70 @@ struct cache* create_cache(void)
 	return cache;
 }
 
+void destroy_cache(struct cache* cache)
+{
+	free(cache->gain);
+	free(cache->bps);
+	free(cache->speed_adjust);
+	free(cache->speed_center);
+	free(cache->speed_lower_scale);
+	free(cache->speed_upper_scale);
+	free(cache->pitch_adjust);
+	free(cache->pitch_center);
+	free(cache->pitch_lower_scale);
+	free(cache->pitch_upper_scale);
+	free(cache->env_attack_time);
+	free(cache->env_attack_shape);
+	free(cache->env_decay_time);
+	free(cache->env_decay_shape);
+	free(cache->env_sustain_level);
+	free(cache->env_release_time);
+	free(cache->env_release_shape);
+	free(cache->reverse);
+	free(cache->loop_times);
+	free(cache->start_point);
+	free(cache->end_point);
+	free(cache->sustain_section);
+	free(cache->tie_sustain_end_to_main_end);
+	free(cache->sustain_start_point);
+	free(cache->sustain_end_point);
+	free(cache->release_section);
+	free(cache->tie_release_start_to_main_end);
+	free(cache->release_start_point);
+	free(cache->release_end_point);
+	free(cache->release_loop_times);
+	free(cache->vibrato_amp);
+	free(cache->vibrato_waveform_type);
+	free(cache->vibrato_tempo_toggle);
+	free(cache->vibrato_freq);
+	free(cache->vibrato_tempo_fraction);
+	free(cache->chorus_voices);
+	free(cache->chorus_mix);
+	free(cache->chorus_mix_center);
+	free(cache->chorus_mix_sides);
+	free(cache->chorus_detune);
+	free(cache->chorus_detune_above_1);
+	free(cache->chorus_detune_below_1);
+	free(cache->chorus_detune_above_2);
+	free(cache->chorus_detune_below_2);
+	free(cache->chorus_detune_above_3);
+	free(cache->chorus_detune_below_3);
+	free(cache->chorus_spread);
+	free(cache->chorus_spread_above_1_l);
+	free(cache->chorus_spread_below_1_l);
+	free(cache->chorus_spread_above_2_l);
+	free(cache->chorus_spread_below_2_l);
+	free(cache->chorus_spread_above_3_l);
+	free(cache->chorus_spread_below_3_l);
+	free(cache->chorus_spread_above_1_r);
+	free(cache->chorus_spread_below_1_r);
+	free(cache->chorus_spread_above_2_r);
+	free(cache->chorus_spread_below_2_r);
+	free(cache->chorus_spread_above_3_r);
+	free(cache->chorus_spread_below_3_r);
+	free(cache);
+}
+
 struct warpy {
 	CSOUND* csound;
 	double sample_rate;
@@ -862,6 +926,8 @@ void destroy_warpy(struct warpy* warpy)
 {
 	csoundDestroy(warpy->csound);
 	destroy_midi_message_buffer(warpy->midi_message_buffer);
+	destroy_cache(warpy->cache);
+	free(warpy->midi_cache);
 	free(warpy->audio_sample);
 	free(warpy->params);
 	free(warpy);

@@ -188,6 +188,7 @@ void play_test(struct warpy* warpy)
 	}
 
 	write_wav(warpy, samples, length);
+	free(samples);
 }
 
 int main(int argc, char* argv[]) {
