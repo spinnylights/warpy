@@ -838,7 +838,7 @@ static void set_params(struct warpy* warpy,
 
 static inline void register_opcodes(CSOUND* csound)
 {
-	csoundSetOption(csound, "--opcode-lib=./opcodes/libvocparam.so");
+	csoundSetOption(csound, "--opcode-lib=opcodes/libvocparam.so");
 }
 
 bool start_warpy(struct warpy* warpy)

@@ -18,10 +18,10 @@
 #include <math.h>
 #include <csound/csdl.h>
 
-typedef struct {
+struct voc_speed {
    OPDS h;
    MYFLT *out, *adjust, *center, *lower_scale_pos, *upper_scale_pos, *midi_freq;
-} VOC_SPEED;
+};
 
 static const MYFLT midi_note_freqs[] = {
 	    8.175798915643707,   8.661957218027252,   9.177023997418988,
@@ -87,7 +87,7 @@ static inline MYFLT scale(MYFLT freq_diff, MYFLT scale_pos)
 	return 1 + ((freq_diff - 1) * scale_pos);
 }
 
-int get_param(CSOUND *csound, VOC_SPEED *p)
+int get_param(CSOUND *csound, struct voc_speed *p)
 {
 	MYFLT freq_diff = *p->midi_freq / midi_note_freq(*p->center);
 	if (freq_diff == 1) {
@@ -105,7 +105,7 @@ int get_param(CSOUND *csound, VOC_SPEED *p)
 
 static OENTRY localops[] = {{
 	"vocparam",
-	sizeof(VOC_SPEED),
+	sizeof(struct voc_speed),
 	0, 2, "k", "kkkki",
 	NULL, (SUBR)get_param
 }};
