@@ -665,7 +665,7 @@ struct warpy* create_warpy(double sample_rate)
 	return warpy;
 }
 
-static void check_cache(struct param* param, float new_arg)
+static inline void check_cache(struct param* param, float new_arg)
 {
 	if (!(param->arg == new_arg)) {
 		param->arg = new_arg;
@@ -677,28 +677,24 @@ static void check_cache(struct param* param, float new_arg)
 	}
 }
 
-static void check_csound_against_cache(CSOUND* csound, struct param* param)
-{
-	if (!param->is_cs_current) {
-		MYFLT cs_current_val =
-			csoundGetControlChannel(csound,
-			                        param->channel,
-			                        NULL);
-		if (param->result == cs_current_val)
-			param->is_cs_current = true;
-		else
-			csoundSetControlChannel(csound,
-			                        param->channel,
-			                        param->result);
-	}
-}
-
 static void update_against_cache(struct warpy* warpy,
                                  struct param* param,
                                  float new_arg)
 {
 	check_cache(param, new_arg);
-	check_csound_against_cache(warpy->csound, param);
+
+	if (!param->is_cs_current) {
+		MYFLT cs_current_val =
+			csoundGetControlChannel(warpy->csound,
+			                        param->channel,
+			                        NULL);
+		if (param->result == cs_current_val)
+			param->is_cs_current = true;
+		else
+			csoundSetControlChannel(warpy->csound,
+			                        param->channel,
+			                        param->result);
+	}
 }
 
 static bool ensure_status(const int status,
