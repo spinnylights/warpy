@@ -61,11 +61,11 @@ file 'test_warpy.o' => 'test_warpy.c' do |t|
   sh "#{COMPILER} #{FLAGS} #{TEST_FLAGS} -c -o #{t.name} test_warpy.c"
 end
 
-task 'test_warpy' => ['test_warpy.o', 'warpy.o'] do |t|
+task 'test_warpy' => [:clean, 'test_warpy.o', 'warpy.o'] do |t|
   sh "#{COMPILER} #{FLAGS} #{TEST_FLAGS} test_warpy.o warpy.o #{LIBS} #{TEST_LIBS} -o #{t.name}"
 end
 
-file 'warpy.so' => [ORC_OUTFILE, 'warpy.c', 'warpy_lv2.c', 'warpy.ttl'] do |t|
+file 'warpy.so' => [:clean, ORC_OUTFILE, 'warpy.c', 'warpy_lv2.c', 'warpy.ttl'] do |t|
   sh "#{COMPILER} #{FLAGS} #{PROD_FLAGS} -c -fpic warpy_lv2.c warpy.c"
   sh "#{COMPILER} #{FLAGS} #{PROD_FLAGS} -shared -o warpy.so warpy_lv2.o warpy.o #{LIBS}"
 end
