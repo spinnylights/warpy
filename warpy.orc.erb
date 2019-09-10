@@ -124,6 +124,23 @@ instr 1
         else
             kvib = 0
         endif
+        ; chorus
+        kchorusvoices chnget "chorus_voices"
+        <%= chorus_params(amount_on: 0) %>
+        if kchorusvoices > 0 then
+            kchorusmixcenter chnget "chorus_mix_center"
+            kchorusmixsides  chnget "chorus_mix_sides"
+            if kchorusvoices == 1 then
+                <%= chorus_params(amount_on: 1) %>
+            elseif kchorusvoices == 2 then
+                <%= chorus_params(amount_on: 2) %>
+            elseif kchorusvoices == 3 then
+                <%= chorus_params(amount_on: 3) %>
+            endif
+        else
+            kchorusmixcenter = 1
+            kchorusmixsides  = 0
+        endif
 
         kmainloops init 0
         kmainbaserate = <%= base_rate('kstart', 'kend') %>
@@ -145,7 +162,6 @@ instr 1
 
         <%= VocoderParams.new('speed', 'k').param_process %>
         <%= VocoderParams.new('pitch', 'k').param_process %>
-        printk 0.25, kpitchfinal
 
         aenv transegr 0,       ienvatt, ienvattsh, \
                       1,       ienvdec, ienvdecsh, \
@@ -183,12 +199,69 @@ instr 1
         endif
 
         if gistereo == 1 then
-            apresigl <%= mincer_out('gileftchan') %>
-            apresigr <%= mincer_out('girightchan') %>
+            acenterl <%= mincer_out('gileftchan') %>
+            acenterr <%= mincer_out('girightchan') %>
         else
-            apresigl <%= mincer_out('gileftchan') %>
-            apresigr = apresigl
+            acenterl <%= mincer_out('gileftchan') %>
+            acenterr = acenterl
         endif
+
+        asigabove1l = 0
+        asigbelow1l = 0
+        asigabove1r = 0
+        asigbelow1r = 0
+        asigabove2l = 0
+        asigbelow2l = 0
+        asigabove2r = 0
+        asigbelow2r = 0
+        asigabove3l = 0
+        asigbelow3l = 0
+        asigabove3r = 0
+        asigbelow3r = 0
+
+        asidesl = 0
+        asidesr = 0
+
+        if gistereo == 1 then
+            irightchan = girightchan
+        else
+            irightchan = gileftchan
+        endif
+
+        if kchorusvoices >= 1 then
+            avocabove1 <%= mincer_out('gileftchan', 'kchorusdetuneabove1') %>
+            avocbelow1 <%= mincer_out('gileftchan', 'kchorusdetunebelow1') %>
+            asigabove1l = avocabove1 * kchorusspreadabove1l;
+            asigbelow1l = avocbelow1 * kchorusspreadbelow1l;
+            asigabove1r = avocabove1 * kchorusspreadabove1r;
+            asigbelow1r = avocbelow1 * kchorusspreadbelow1r;
+        endif
+        if kchorusvoices >= 2 then
+            avocabove2 <%= mincer_out('gileftchan', 'kchorusdetuneabove2') %>
+            avocbelow2 <%= mincer_out('gileftchan', 'kchorusdetunebelow2') %>
+            asigabove2l = avocabove2 * kchorusspreadabove2l;
+            asigbelow2l = avocbelow2 * kchorusspreadbelow2l;
+            asigabove2r = avocabove2 * kchorusspreadabove2r;
+            asigbelow2r = avocbelow2 * kchorusspreadbelow2r;
+        endif
+        if kchorusvoices >= 3 then
+            avocabove3 <%= mincer_out('gileftchan', 'kchorusdetuneabove3') %>
+            avocbelow3 <%= mincer_out('gileftchan', 'kchorusdetunebelow3') %>
+            asigabove3l = avocabove3 * kchorusspreadabove3l;
+            asigbelow3l = avocbelow3 * kchorusspreadbelow3l;
+            asigabove3r = avocabove3 * kchorusspreadabove3r;
+            asigbelow3r = avocbelow3 * kchorusspreadbelow3r;
+        endif
+
+        if kchorusvoices > 0 then
+            asidesl = asigabove1l + asigbelow1l + asigabove2l + \
+                      asigbelow2l + asigabove3l + asigbelow3l
+            asidesr = asigabove1r + asigbelow1r + asigabove2r + \
+                      asigbelow2r + asigabove3r + asigbelow3r
+        endif
+
+        apresigl = asidesl*kchorusmixsides + acenterl*kchorusmixcenter
+        apresigr = asidesr*kchorusmixsides + acenterr*kchorusmixcenter
 
         asigl = apresigl * aenv
         asigr = apresigr * aenv

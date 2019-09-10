@@ -45,6 +45,10 @@ enum port_indices {
 	WARPY_VIBRATO_FREQ,
 	WARPY_VIBRATO_TEMPO_TOGGLE,
 	WARPY_VIBRATO_TEMPO_FRACTION,
+	WARPY_CHORUS_VOICES,
+	WARPY_CHORUS_MIX,
+	WARPY_CHORUS_DETUNE,
+	WARPY_CHORUS_STEREO_SPREAD,
 	WARPY_ATTACK_TIME,
 	WARPY_ATTACK_SHAPE,
 	WARPY_DECAY_TIME,
@@ -89,6 +93,10 @@ struct lv2 {
 		float*                   vibrato_freq;
 		float*                   vibrato_tempo_toggle;
 		float*                   vibrato_tempo_fraction;
+		float*                   chorus_voices;
+		float*                   chorus_mix;
+		float*                   chorus_detune;
+		float*                   chorus_stereo_spread;
 		float*                   attack_time;
 		float*                   attack_shape;
 		float*                   decay_time;
@@ -246,6 +254,18 @@ static void connect_port(LV2_Handle instance,
 		case WARPY_VIBRATO_TEMPO_FRACTION:
 			lv2->ports.vibrato_tempo_fraction = (float*)data;
 			break;
+		case WARPY_CHORUS_VOICES:
+			lv2->ports.chorus_voices = (float*)data;
+			break;
+		case WARPY_CHORUS_MIX:
+			lv2->ports.chorus_mix = (float*)data;
+			break;
+		case WARPY_CHORUS_DETUNE:
+			lv2->ports.chorus_detune = (float*)data;
+			break;
+		case WARPY_CHORUS_STEREO_SPREAD:
+			lv2->ports.chorus_stereo_spread = (float*)data;
+			break;
 		case WARPY_ATTACK_TIME:
 			lv2->ports.attack_time = (float*)data;
 			break;
@@ -315,6 +335,12 @@ static void update_control_ports(struct lv2* lv2)
 	                           *(lv2->ports.vibrato_tempo_toggle));
 	update_vibrato_tempo_fraction(lv2->warpy,
 	                             *(lv2->ports.vibrato_tempo_fraction));
+
+	update_chorus_voices(lv2->warpy, *(lv2->ports.chorus_voices));
+	update_chorus_mix(lv2->warpy, *(lv2->ports.chorus_mix));
+	update_chorus_detune(lv2->warpy, *(lv2->ports.chorus_detune));
+	update_chorus_stereo_spread(lv2->warpy,
+	                            *(lv2->ports.chorus_stereo_spread));
 
 	struct envelope env;
 	env.attack_time   = *(lv2->ports.attack_time);

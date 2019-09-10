@@ -28,12 +28,12 @@ void play_test(struct warpy* warpy)
 {
 	uint8_t c4_on[] =  {  note_on(0x3c) };
 	uint8_t c4_off[] = { note_off(0x3c) };
-	//uint8_t c3_on[] =  {  note_on(0x30) };
-	//uint8_t c3_off[] = { note_off(0x30) };
-	//uint8_t c5_on[] =  {  note_on(0x48) };
-	//uint8_t c5_off[] = { note_off(0x48) };
-	//uint8_t c6_on[] =  {  note_on(0x54) };
-	//uint8_t c6_off[] = { note_off(0x54) };
+	uint8_t c3_on[] =  {  note_on(0x30) };
+	uint8_t c3_off[] = { note_off(0x30) };
+	uint8_t c5_on[] =  {  note_on(0x48) };
+	uint8_t c5_off[] = { note_off(0x48) };
+	uint8_t c6_on[] =  {  note_on(0x54) };
+	uint8_t c6_off[] = { note_off(0x54) };
 
 	int secs = 18;
 	int length = secs * SAMPLE_RATE;
@@ -104,7 +104,7 @@ void play_test(struct warpy* warpy)
 		update_envelope(warpy, env);
 		if ((double)i < (double)note_length*4.9) {
 			update_bpm(warpy, 80);
-			update_gain(warpy, 0.9);
+			update_gain(warpy, 0.3);
 			update_reverse(warpy, false);
 			update_sample_path(warpy, "fox_48k.wav");
 			update_vocoder_settings(warpy, speed_settings_1);
@@ -112,63 +112,72 @@ void play_test(struct warpy* warpy)
 			update_loop_times(warpy, 0);
 			update_sustain_section(warpy, false);
 			update_release_loop_times(warpy, 2);
-			update_vibrato_amp(warpy, 1);
+			update_vibrato_amp(warpy, 0);
 			update_vibrato_waveform_type(warpy, 4);
 			update_vibrato_tempo_toggle(warpy, false);
 			update_vibrato_freq(warpy, 0.05);
 			update_vibrato_tempo_fraction(warpy, 12);
+			update_chorus_voices(warpy, 1);
+			update_chorus_mix(warpy, 0.5);
+			update_chorus_detune(warpy, 0.5);
+			update_chorus_stereo_spread(warpy, 0.5);
 		}
-		else if (i < note_length*5) {
+		//else if (i < note_length*5) {
+		else {
 			update_bpm(warpy, 160);
-			update_gain(warpy, 0.9);
-			update_reverse(warpy, false);
+			update_gain(warpy, 0.3);
+			update_reverse(warpy, true);
 			update_sample_path(warpy, "fox_48k.wav");
 			update_vocoder_settings(warpy, speed_settings_2);
 			update_vocoder_settings(warpy, pitch_settings_2);
 			update_loop_times(warpy, 1);
 			update_sustain_section(warpy, false);
 			update_release_loop_times(warpy, 1);
+			update_chorus_voices(warpy, 3);
+			update_chorus_mix(warpy, 1);
+			update_chorus_detune(warpy, 1);
+			update_chorus_stereo_spread(warpy, 0.5);
 		}
-		else {
-			update_gain(warpy, 0.9);
-			update_reverse(warpy, false);
-			update_sample_path(warpy, "fox_48k.wav");
-			update_vocoder_settings(warpy, speed_settings_2);
-			update_vocoder_settings(warpy, pitch_settings_2);
-			update_loop_times(warpy, 1);
-			update_release_loop_times(warpy, 1);
-		}
+		//else {
+		//	update_gain(warpy, 0.9);
+		//	update_reverse(warpy, false);
+		//	update_sample_path(warpy, "fox_48k.wav");
+		//	update_vocoder_settings(warpy, speed_settings_2);
+		//	update_vocoder_settings(warpy, pitch_settings_2);
+		//	update_loop_times(warpy, 1);
+		//	update_release_loop_times(warpy, 1);
+		//}
 
 		if      (i == note_length)
 			send_midi_message(warpy, c4_on, 3);
-		//else if (i == note_length*2 - 1)
-		//	send_midi_message(warpy, c4_off, 3);
-		//else if (i == note_length*2)
-		//	send_midi_message(warpy, c3_on, 3);
-		//else if (i == note_length*3 - 1)
-		//	send_midi_message(warpy, c3_off, 3);
-		//else if (i == note_length*3)
-		//	send_midi_message(warpy, c5_on, 3);
-		//else if (i == note_length*4 - 1)
-		//	send_midi_message(warpy, c5_off, 3);
-		//else if (i == note_length*4)
-		//	send_midi_message(warpy, c6_on, 3);
-		//else if (i == note_length*5 - 1)
-		//	send_midi_message(warpy, c6_off, 3);
-		//else if (i == note_length*6)
-		//	send_midi_message(warpy, c4_on, 3);
-		//else if (i == note_length*7 - 1)
-		//	send_midi_message(warpy, c4_off, 3);
-		//else if (i == note_length*7)
-		//	send_midi_message(warpy, c3_on, 3);
-		//else if (i == note_length*8 - 1)
-		//	send_midi_message(warpy, c3_off, 3);
-		//else if (i == note_length*8)
-		//	send_midi_message(warpy, c5_on, 3);
-		//else if (i == note_length*9 - 1)
-		//	send_midi_message(warpy, c5_off, 3);
-		//else if (i == note_length*9)
-		//	send_midi_message(warpy, c6_on, 3);
+		else if (i == note_length*2 - 1)
+			send_midi_message(warpy, c4_off, 3);
+		else if (i == note_length*2)
+			send_midi_message(warpy, c3_on, 3);
+		else if (i == note_length*3 - 1)
+			send_midi_message(warpy, c3_off, 3);
+		else if (i == note_length*3)
+			send_midi_message(warpy, c5_on, 3);
+		else if (i == note_length*4 - 1)
+			send_midi_message(warpy, c5_off, 3);
+		else if (i == note_length*4)
+			send_midi_message(warpy, c6_on, 3);
+		else if (i == note_length*5 - 1)
+			send_midi_message(warpy, c6_off, 3);
+		else if (i == note_length*6)
+			send_midi_message(warpy, c4_on, 3);
+		else if (i == note_length*7 - 1)
+			send_midi_message(warpy, c4_off, 3);
+		else if (i == note_length*7)
+			send_midi_message(warpy, c3_on, 3);
+		else if (i == note_length*8 - 1)
+			send_midi_message(warpy, c3_off, 3);
+		else if (i == note_length*8)
+			send_midi_message(warpy, c5_on, 3);
+		else if (i == note_length*9 - 1)
+			send_midi_message(warpy, c5_off, 3);
+		else if (i == note_length*9)
+			send_midi_message(warpy, c6_on, 3);
 		else if (i == note_length*10 - 1)
 			send_midi_message(warpy, c4_off, 3);
 

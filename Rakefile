@@ -9,9 +9,15 @@ require_relative 'rake/orc_file'
 COMPILER = 'gcc'
 
 FLAGS = %w(
-  -g
   -Wall
   -Werror
+).join(' ')
+
+TEST_FLAGS = '-g'
+
+PROD_FLAGS = %w(
+  -O2
+  -march=native
 ).join(' ')
 
 LIBS = %w(
@@ -48,20 +54,20 @@ CLEAN.include('*.o')
 CLEAN.include('*.mf')
 
 file 'warpy.o' => ['warpy.c', ORC_OUTFILE] do |t|
-  sh "#{COMPILER} #{FLAGS} -c -o #{t.name} warpy.c"
+  sh "#{COMPILER} #{FLAGS} #{TEST_FLAGS} -c -o #{t.name} warpy.c"
 end
 
 file 'test_warpy.o' => 'test_warpy.c' do |t|
-  sh "#{COMPILER} #{FLAGS} -c -o #{t.name} test_warpy.c"
+  sh "#{COMPILER} #{FLAGS} #{TEST_FLAGS} -c -o #{t.name} test_warpy.c"
 end
 
 task 'test_warpy' => ['test_warpy.o', 'warpy.o'] do |t|
-  sh "#{COMPILER} #{FLAGS} test_warpy.o warpy.o #{LIBS} #{TEST_LIBS} -o #{t.name}"
+  sh "#{COMPILER} #{FLAGS} #{TEST_FLAGS} test_warpy.o warpy.o #{LIBS} #{TEST_LIBS} -o #{t.name}"
 end
 
 file 'warpy.so' => [ORC_OUTFILE, 'warpy.c', 'warpy_lv2.c', 'warpy.ttl'] do |t|
-  sh "#{COMPILER} #{FLAGS} -c -fpic warpy_lv2.c warpy.c"
-  sh "#{COMPILER} #{FLAGS} -shared -o warpy.so warpy_lv2.o warpy.o #{LIBS}"
+  sh "#{COMPILER} #{FLAGS} #{PROD_FLAGS} -c -fpic warpy_lv2.c warpy.c"
+  sh "#{COMPILER} #{FLAGS} #{PROD_FLAGS} -shared -o warpy.so warpy_lv2.o warpy.o #{LIBS}"
 end
 
 task default: :build

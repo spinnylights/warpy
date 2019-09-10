@@ -26,11 +26,11 @@
 
 struct param;
 struct warpy;
+
 struct bounds {
 	struct param* start;
 	struct param* end;
 };
-
 
 struct audio_sample {
 	float left;
@@ -94,5 +94,10 @@ void update_vibrato_waveform_type(struct warpy* warpy, unsigned waveform_type);
 void update_vibrato_tempo_toggle(struct warpy* warpy, bool tempo_toggle);
 void update_vibrato_freq(struct warpy* warpy, float freq);
 void update_vibrato_tempo_fraction(struct warpy* warpy, unsigned tempo_fraction);
+
+void update_chorus_voices(struct warpy* warpy, unsigned voices);
+void update_chorus_mix(struct warpy* warpy, float mix);
+void update_chorus_detune(struct warpy* warpy, float detune);
+void update_chorus_stereo_spread(struct warpy* warpy, float spread);
 
 #endif

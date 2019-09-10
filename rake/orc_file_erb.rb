@@ -6,10 +6,10 @@ module ERBUtils
   MINCER_FFT_SIZE = '8184'
   MINCER_DECIM = '8'
 
-  def mincer_out(file_channel)
+  def mincer_out(file_channel, pitch_mod=0)
     <<~MINCER
-      mincer asamplepos, iamp*kgain, kpitchfinal+kvib, #{file_channel}, 1,\
-             #{MINCER_FFT_SIZE}, #{MINCER_DECIM}
+      mincer asamplepos, iamp*kgain, kpitchfinal+kvib+(#{pitch_mod}), \
+             #{file_channel}, 1, #{MINCER_FFT_SIZE}, #{MINCER_DECIM}
     MINCER
   end
 
@@ -45,6 +45,47 @@ module ERBUtils
 
   def kline(base_rate)
     "(1 / (#{base_rate} / kspeedfinal)) / kr"
+  end
+
+  def chorus_var_name(type, position, id, channel='')
+    "kchorus#{type}#{position}#{id}#{channel}"
+  end
+
+  def chorus_channel_get(type, position, id, channel='')
+    if !channel.empty? then channel = '_' + channel end
+    "chnget \"chorus_#{type}_#{position}_#{id}#{channel}\""
+  end
+
+  def chorus_param(type, position, id, channel='')
+    [
+      chorus_var_name(type, position, id, channel),
+      chorus_channel_get(type, position, id, channel)
+    ]
+  end
+
+  def chorus_params(amount_on:)
+    channel_off = " = 0"
+    source = String.new
+    (1..3).each do |id|
+      params = [
+        chorus_param('detune', 'above', id),
+        chorus_param('detune', 'below', id),
+        chorus_param('spread', 'above', id, 'l'),
+        chorus_param('spread', 'below', id, 'l'),
+        chorus_param('spread', 'above', id, 'r'),
+        chorus_param('spread', 'below', id, 'r'),
+      ]
+      params.each do |param|
+        param_var_name = param[0]
+        if id > amount_on
+          source << param_var_name << channel_off << "\n"
+        else
+          param_channel = param[1]
+          source << param_var_name << ' ' << param_channel << "\n"
+        end
+      end
+    end
+    return source
   end
 
   class VocoderParams

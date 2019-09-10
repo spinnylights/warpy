@@ -262,9 +262,9 @@ warpy:sample
 		lv2:symbol "vibrato_waveform_type" ;
 		lv2:name "Vibrato Waveform Type" ;
 		lv2:portProperty lv2:integer ;
-		lv2:default 1 ;
-		lv2:minimum 1 ;
-		lv2:maximum 4 ;
+		lv2:default 1.0 ;
+		lv2:minimum 1.0 ;
+		lv2:maximum 4.0 ;
 	] , [
 		a lv2:InputPort, lv2:ControlPort ;
 		lv2:index <%= index += 1 %> ;
@@ -288,9 +288,42 @@ warpy:sample
 		lv2:symbol "vibrato_tempo_fraction" ;
 		lv2:name "Vibrato Tempo Fraction" ;
 		lv2:portProperty lv2:integer ;
-		lv2:default 0 ;
-		lv2:minimum 0 ;
-		lv2:maximum 11 ;
+		lv2:default 0.0 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 11.0 ;
+	] , [
+		a lv2:InputPort, lv2:ControlPort ;
+		lv2:index <%= index += 1 %> ;
+		lv2:symbol "chorus_voices" ;
+		lv2:name "Chorus Voices" ;
+		lv2:portProperty lv2:integer ;
+		lv2:default 0.0 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 3.0 ;
+	] , [
+		a lv2:InputPort, lv2:ControlPort ;
+		lv2:index <%= index += 1 %> ;
+		lv2:symbol "chorus_mix" ;
+		lv2:name "Chorus Mix" ;
+		lv2:default 0.0 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 1.0 ;
+	] , [
+		a lv2:InputPort, lv2:ControlPort ;
+		lv2:index <%= index += 1 %> ;
+		lv2:symbol "chorus_detune" ;
+		lv2:name "Chorus Detune" ;
+		lv2:default 0.0 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 1.0 ;
+	] , [
+		a lv2:InputPort, lv2:ControlPort ;
+		lv2:index <%= index += 1 %> ;
+		lv2:symbol "chorus_stereo_spread" ;
+		lv2:name "Chorus Stereo Spread" ;
+		lv2:default 0.0 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 1.0 ;
 	] , [
 		a lv2:InputPort, lv2:ControlPort ;
 		lv2:index <%= index += 1 %> ;

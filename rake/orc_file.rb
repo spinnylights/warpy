@@ -19,7 +19,7 @@ class OrcFile
   def conv_to_hexdump
     `xxd -i < #{preproced_file} > #{outfile}`
     `echo ', 0' >> #{outfile}`
-    `rm #{preproced_file}`
+    #`rm #{preproced_file}`
   end
 
   private
