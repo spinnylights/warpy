@@ -18,8 +18,7 @@ PROD_FLAGS = %w(
   -march=native
 ).join(' ')
 
-#TEST_FLAGS = '-g'
-TEST_FLAGS = PROD_FLAGS
+TEST_FLAGS = '-ggdb'
 
 LIBS_A = %w(
   -lm
@@ -69,7 +68,7 @@ FileList['opcodes/*.c'].each do |opcode|
   file ORC_OUTFILE => so
 end
 
-file 'warpy.o' => ['warpy.c', ORC_OUTFILE, 'opcodes/libvocparam.c'] do |t|
+file 'warpy.o' => ['warpy.c', ORC_OUTFILE] do |t|
   sh "#{COMPILER} #{FLAGS} #{TEST_FLAGS} -c -o #{t.name} #{t.prerequisites[0]}"
 end
 
@@ -77,7 +76,7 @@ file 'test_warpy.o' => 'test_warpy.c' do |t|
   sh "#{COMPILER} #{FLAGS} #{TEST_FLAGS} -c -o #{t.name} #{t.prerequisites[0]}"
 end
 
-task 'test_warpy' => [:clean, 'test_warpy.o', 'warpy.o', 'opcodes/libvocparam.so'] do |t|
+task 'test_warpy' => [:clean, 'test_warpy.o', 'warpy.o'] do |t|
   sh "#{COMPILER} #{FLAGS} #{TEST_FLAGS} #{t.prerequisites[1]} #{t.prerequisites[2]} #{LIBS} #{TEST_LIBS} -o #{t.name}"
 end
 
