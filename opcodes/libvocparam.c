@@ -87,7 +87,7 @@ static inline MYFLT scale(MYFLT freq_diff, MYFLT scale_pos)
 	return 1 + ((freq_diff - 1) * scale_pos);
 }
 
-int get_param(CSOUND *csound, struct voc_speed *p)
+int get_param(CSOUND* csound, struct voc_speed* p)
 {
 	MYFLT freq_diff = *p->midi_freq / midi_note_freq(*p->center);
 	if (freq_diff == 1) {

@@ -13,12 +13,13 @@ FLAGS = %w(
   -Werror
 ).join(' ')
 
-TEST_FLAGS = '-g'
-
 PROD_FLAGS = %w(
   -O2
   -march=native
 ).join(' ')
+
+#TEST_FLAGS = '-g'
+TEST_FLAGS = PROD_FLAGS
 
 LIBS_A = %w(
   -lm
@@ -50,19 +51,22 @@ file TTL_OUTFILE => TTL_INFILE do
 end
 CLEAN.include(TTL_OUTFILE)
 
-CLOBBER.include('*.so')
+CLOBBER.include('**/*.so')
 
 CLEAN.include('**/*.o')
 CLEAN.include('*.mf')
 
-file 'opcodes/midi_notes.o' => 'opcodes/midi_notes.c' do |t|
-  sh "#{COMPILER} #{FLAGS} #{PROD_FLAGS} -c -fpic -o #{t.name} #{t.prerequisites[0]}"
+def compile_opcode(t)
+  lcsound = LIBS_A.filter {|l| l =~ /csound/}.join(' ')
+  sh "#{COMPILER} #{FLAGS} #{TEST_FLAGS} -shared -fpic #{t.prerequisites[0]} #{lcsound} -o opcodes/#{t.name}"
 end
 
-libvocparam_prereqs = ['opcodes/libvocparam.c']
-file 'opcodes/libvocparam.so' => libvocparam_prereqs do |t|
-  lcsound = LIBS_A.filter {|l| l =~ /csound/}.join(' ')
-  sh "#{COMPILER} #{FLAGS} #{PROD_FLAGS} -shared -fpic #{t.prerequisites[0]} #{lcsound} -o #{t.name}"
+FileList['opcodes/*.c'].each do |opcode|
+  so = File.basename(opcode, '.c') + '.so'
+  file so => opcode do |t|
+    compile_opcode(t)
+  end
+  file ORC_OUTFILE => so
 end
 
 file 'warpy.o' => ['warpy.c', ORC_OUTFILE, 'opcodes/libvocparam.c'] do |t|

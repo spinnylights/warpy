@@ -45,6 +45,8 @@ instr +FileLoader
     gileftchan ftgen 1, 0, 0, 1, gSpath, 0, 0, 1
     if gistereo == 1 then
         girightchan ftgen 2, 0, 0, 1, gSpath, 0, 0, 2
+    else
+        girightchan = gileftchan
     endif
     gisampledur chnget "sample_dur"
     gisampleready = 1
@@ -193,70 +195,87 @@ instr 1
             asamplepos = apointer*gisampledur
         endif
 
-        if gistereo == 1 then
-            if kchorusvoices > 0 then
-                acenterl = <%= mincer_out_func('gileftchan') %> * kchorusmixcenter
-                acenterr = <%= mincer_out_func('girightchan') %> * kchorusmixcenter
+        if kchorusvoices == 0 then
+            asigl chorusig <%= mincer_out_func('gileftchan') %>,
+                           kchorusvoices,
+                           0, 0, 0, 0, 0, 0,
+                           0, 0, 0, 0, 0, 0,
+                           1, 0, aenv
+
+            if gistereo == 1 then
+                asigr chorusig <%= mincer_out_func('girightchan') %>,
+                               kchorusvoices,
+                               0, 0, 0, 0, 0, 0,
+                               0, 0, 0, 0, 0, 0,
+                               1, 0, aenv
             else
-                asigl = <%= mincer_out_func('gileftchan') %> * aenv
-                asigr = <%= mincer_out_func('girightchan') %> * aenv
-            endif
-        else
-            if kchorusvoices > 0 then
-                acenterl = <%= mincer_out_func('gileftchan') %> * kchorusmixcenter
-                acenterr = acenterl
-            else
-                asigl = <%= mincer_out_func('gileftchan') %> * aenv
                 asigr = asigl
             endif
-        endif
-
-        if gistereo == 1 then
-            irightchan = girightchan
-        else
-            irightchan = gileftchan
-        endif
-
-        if kchorusvoices >= 1 then
-            avocabove1 <%= mincer_out('gileftchan', 'kchorusdetuneabove1') %>
-            avocbelow1 <%= mincer_out('gileftchan', 'kchorusdetunebelow1') %>
-            asigabove1l = avocabove1 * kchorusspreadabove1l;
-            asigbelow1l = avocbelow1 * kchorusspreadbelow1l;
-            asigabove1r = avocabove1 * kchorusspreadabove1r;
-            asigbelow1r = avocbelow1 * kchorusspreadbelow1r;
-        endif
-        if kchorusvoices >= 2 then
-            avocabove2 <%= mincer_out('gileftchan', 'kchorusdetuneabove2') %>
-            avocbelow2 <%= mincer_out('gileftchan', 'kchorusdetunebelow2') %>
-            asigabove2l = avocabove2 * kchorusspreadabove2l;
-            asigbelow2l = avocbelow2 * kchorusspreadbelow2l;
-            asigabove2r = avocabove2 * kchorusspreadabove2r;
-            asigbelow2r = avocbelow2 * kchorusspreadbelow2r;
-        endif
-        if kchorusvoices >= 3 then
-            avocabove3 <%= mincer_out('gileftchan', 'kchorusdetuneabove3') %>
-            avocbelow3 <%= mincer_out('gileftchan', 'kchorusdetunebelow3') %>
-            asigabove3l = avocabove3 * kchorusspreadabove3l;
-            asigbelow3l = avocbelow3 * kchorusspreadbelow3l;
-            asigabove3r = avocabove3 * kchorusspreadabove3r;
-            asigbelow3r = avocbelow3 * kchorusspreadbelow3r;
-        endif
-
-        if kchorusvoices == 1 then
-            asigl = ((asigabove1l + asigbelow1l)*kchorusmixsides + acenterl) * aenv
-            asigr = ((asigabove1r + asigbelow1r)*kchorusmixsides + acenterr) * aenv
+        elseif kchorusvoices == 1 then
+            asigl chorusig <%= mincer_out_func('gileftchan') %>,
+                           kchorusvoices,
+                           <%= mincer_out_func('gileftchan', 'kchorusdetuneabove1') %>,
+                           <%= mincer_out_func('gileftchan', 'kchorusdetunebelow1') %>,
+                           0, 0, 0, 0,
+                           kchorusspreadabove1l, kchorusspreadbelow1l,
+                           0, 0, 0, 0,
+                           kchorusmixcenter, kchorusmixsides, aenv
+            asigr chorusig <%= mincer_out_func('girightchan') %>,
+                           kchorusvoices,
+                           <%= mincer_out_func('girightchan', 'kchorusdetuneabove1') %>,
+                           <%= mincer_out_func('girightchan', 'kchorusdetunebelow1') %>,
+                           0, 0, 0, 0,
+                           kchorusspreadabove1r, kchorusspreadbelow1r,
+                           0, 0, 0, 0,
+                           kchorusmixcenter, kchorusmixsides, aenv
         elseif kchorusvoices == 2 then
-            asigl = ((asigabove1l + asigbelow1l + asigabove2l + asigbelow2l) *
-                    kchorusmixsides + acenterl) * aenv
-            asigr = ((asigabove1r + asigbelow1r + asigabove2r + asigbelow2r) *
-                    kchorusmixsides + acenterr) * aenv
-        elseif kchorusvoices == 3 then
-            asigl = ((asigabove1l + asigbelow1l + asigabove2l + \
-                       asigbelow2l + asigabove3l + asigbelow3l) * \
-                       kchorusmixsides + acenterl) * aenv
-            asigr = ((asigabove1r + asigbelow1r + asigabove2r + \
-                       asigbelow2r + asigabove3r + asigbelow3r) * \
-                       kchorusmixsides + acenterr) * aenv
+            asigl chorusig <%= mincer_out_func('gileftchan') %>,
+                           kchorusvoices,
+                           <%= mincer_out_func('gileftchan', 'kchorusdetuneabove1') %>,
+                           <%= mincer_out_func('gileftchan', 'kchorusdetunebelow1') %>,
+                           <%= mincer_out_func('gileftchan', 'kchorusdetuneabove2') %>,
+                           <%= mincer_out_func('gileftchan', 'kchorusdetunebelow2') %>,
+                           0, 0,
+                           kchorusspreadabove1l, kchorusspreadbelow1l,
+                           kchorusspreadabove2l, kchorusspreadbelow2l,
+                           0, 0,
+                           kchorusmixcenter, kchorusmixsides, aenv
+            asigr chorusig <%= mincer_out_func('girightchan') %>,
+                           kchorusvoices,
+                           <%= mincer_out_func('girightchan', 'kchorusdetuneabove1') %>,
+                           <%= mincer_out_func('girightchan', 'kchorusdetunebelow1') %>,
+                           <%= mincer_out_func('girightchan', 'kchorusdetuneabove2') %>,
+                           <%= mincer_out_func('girightchan', 'kchorusdetunebelow2') %>,
+                           0, 0,
+                           kchorusspreadabove1r, kchorusspreadbelow1r,
+                           kchorusspreadabove2r, kchorusspreadbelow2r,
+                           0, 0,
+                           kchorusmixcenter, kchorusmixsides, aenv
+        else
+            asigl chorusig <%= mincer_out_func('gileftchan') %>,
+                           kchorusvoices,
+                           <%= mincer_out_func('gileftchan', 'kchorusdetuneabove1') %>,
+                           <%= mincer_out_func('gileftchan', 'kchorusdetunebelow1') %>,
+                           <%= mincer_out_func('gileftchan', 'kchorusdetuneabove2') %>,
+                           <%= mincer_out_func('gileftchan', 'kchorusdetunebelow2') %>,
+                           <%= mincer_out_func('gileftchan', 'kchorusdetuneabove3') %>,
+                           <%= mincer_out_func('gileftchan', 'kchorusdetunebelow3') %>,
+                           kchorusspreadabove1l, kchorusspreadbelow1l,
+                           kchorusspreadabove2l, kchorusspreadbelow2l,
+                           kchorusspreadabove3l, kchorusspreadbelow3l,
+                           kchorusmixcenter, kchorusmixsides, aenv
+            asigr chorusig <%= mincer_out_func('girightchan') %>,
+                           kchorusvoices,
+                           <%= mincer_out_func('girightchan', 'kchorusdetuneabove1') %>,
+                           <%= mincer_out_func('girightchan', 'kchorusdetunebelow1') %>,
+                           <%= mincer_out_func('girightchan', 'kchorusdetuneabove2') %>,
+                           <%= mincer_out_func('girightchan', 'kchorusdetunebelow2') %>,
+                           <%= mincer_out_func('girightchan', 'kchorusdetuneabove3') %>,
+                           <%= mincer_out_func('girightchan', 'kchorusdetunebelow3') %>,
+                           kchorusspreadabove1r, kchorusspreadbelow1r,
+                           kchorusspreadabove2r, kchorusspreadbelow2r,
+                           kchorusspreadabove3r, kchorusspreadbelow3r,
+                           kchorusmixcenter, kchorusmixsides, aenv
         endif
 
         kdialdown init 1

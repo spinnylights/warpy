@@ -806,6 +806,7 @@ static void set_up_midi(CSOUND* csound)
 static void set_up_audio(CSOUND* csound)
 {
 	csoundSetHostImplementedAudioIO(csound, 1, 0);
+	csoundSetOption(csound, "--sample-accurate");
 	csoundSetOption(csound, "-n"); // disable writing audio to disk
 	csoundSetOption(csound, "-d"); // daemon mode
 	csoundSetOption(csound, "--messagelevel=4"); // warnings only
@@ -839,6 +840,7 @@ static void set_params(struct warpy* warpy,
 static inline void register_opcodes(CSOUND* csound)
 {
 	csoundSetOption(csound, "--opcode-lib=opcodes/libvocparam.so");
+	csoundSetOption(csound, "--opcode-lib=opcodes/libchorusig.so");
 }
 
 bool start_warpy(struct warpy* warpy)
