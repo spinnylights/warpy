@@ -637,7 +637,7 @@ static void write_to_output(struct voc_chorus* const p,
 				sample *= center_mix;
 			if (*p->main_channel_pan == BOTH_CHANNELS)
 				out_channel[n] += sample;
-			if (p->no_of_c_voices > 0 && sides_mix > 0) {
+			else {
 				if (channel == 0) {
 					const double* const to_out_sides_l =
 					     (double*)p->out_frames_chor_l.auxp;
