@@ -42,39 +42,39 @@ void play_test(struct warpy* warpy)
 	float* samples = (float*)calloc(samples_length, sizeof(float));
 	int i;
 	struct envelope env;
-	env.attack_time   = 0.01;
-	env.attack_shape  = 4;
-	env.decay_time    = 0.5;
-	env.decay_shape   = -4;
-	env.sustain_level = 0.5;
-	env.release_time  = 0.01;
-	env.release_shape = 4;
+	env.attack_time   = 0.3;
+	env.attack_shape  = 0;
+	env.decay_time    = 0.3;
+	env.decay_shape   = 0;
+	env.sustain_level = 0.9;
+	env.release_time  = 0.2;
+	env.release_shape = 0;
 
 	struct vocoder_settings speed_settings_1;
 	speed_settings_1.type   = VOC_SPEED;
-	speed_settings_1.adjust = 0.5;
-	speed_settings_1.center = 60;
-	speed_settings_1.lower_scale = 0;
-	speed_settings_1.upper_scale = 0;
+	speed_settings_1.adjust = 0.2;
+	speed_settings_1.center = 57;
+	speed_settings_1.lower_scale = 2;
+	speed_settings_1.upper_scale = -2;
 
 	struct vocoder_settings speed_settings_2;
 	speed_settings_2.type   = VOC_SPEED;
-	speed_settings_2.adjust = 0.5;
-	speed_settings_2.center = 60;
-	speed_settings_2.lower_scale = 0;
-	speed_settings_2.upper_scale = 0;
+	speed_settings_2.adjust = 0.2;
+	speed_settings_2.center = 57;
+	speed_settings_2.lower_scale = 2;
+	speed_settings_2.upper_scale = -2;
 
 	struct vocoder_settings pitch_settings_1;
 	pitch_settings_1.type   = VOC_PITCH;
-	pitch_settings_1.adjust = 0.5;
-	pitch_settings_1.center = 60;
+	pitch_settings_1.adjust = 0.8;
+	pitch_settings_1.center = 57;
 	pitch_settings_1.lower_scale = 0;
 	pitch_settings_1.upper_scale = 0;
 
 	struct vocoder_settings pitch_settings_2;
 	pitch_settings_2.type   = VOC_PITCH;
-	pitch_settings_2.adjust = 0.5;
-	pitch_settings_2.center = 60;
+	pitch_settings_2.adjust = 0.8;
+	pitch_settings_2.center = 57;
 	pitch_settings_2.lower_scale = 0;
 	pitch_settings_2.upper_scale = 0;
 
@@ -94,54 +94,54 @@ void play_test(struct warpy* warpy)
 					    main_bounds);
 		update_start_and_end_points(warpy,
 					    sus_start,
-					    0.26,
+					    0.76,
 					    sustain_bounds);
 		update_start_and_end_points(warpy,
-					    0.26,
+					    0.76,
 					    1.0,
 					    release_bounds);
 		update_release_section(warpy, false);
 		update_envelope(warpy, env);
 		if ((double)i < (double)note_length*4.9) {
-			update_bpm(warpy, 80);
+			update_bpm(warpy, 1);
 			update_gain(warpy, 0.3);
 			update_reverse(warpy, false);
-			update_sample_path(warpy, "fox_48k.wav");
+			update_sample_path(warpy, "tpt_57.wav");
 			update_vocoder_settings(warpy, speed_settings_1);
 			update_vocoder_settings(warpy, pitch_settings_1);
 			update_loop_times(warpy, 0);
-			update_sustain_section(warpy, false);
-			update_release_loop_times(warpy, 2);
-			update_vibrato_amp(warpy, 0);
-			update_vibrato_waveform_type(warpy, 4);
-			update_vibrato_tempo_toggle(warpy, false);
-			update_vibrato_freq(warpy, 0.05);
-			update_vibrato_tempo_fraction(warpy, 12);
-			update_chorus_voices(warpy, 3);
-			update_chorus_mix(warpy, 0.5);
-			update_chorus_detune(warpy, 0.5);
-			update_chorus_stereo_spread(warpy, 0.5);
+			update_sustain_section(warpy, true);
+			update_release_loop_times(warpy, 0);
+			update_vibrato_amp(warpy, 1);
+			update_vibrato_waveform_type(warpy, 2);
+			update_vibrato_tempo_toggle(warpy, true);
+			update_vibrato_freq(warpy, 0.50);
+			update_vibrato_tempo_fraction(warpy, 1);
+			update_chorus_voices(warpy, 6);
+			update_chorus_mix(warpy, 1);
+			update_chorus_detune(warpy, 1);
+			update_chorus_stereo_spread(warpy, 1);
 		}
 		//else if (i < note_length*5) {
 		else {
-			update_bpm(warpy, 160);
+			update_bpm(warpy, 1);
 			update_gain(warpy, 0.3);
-			update_reverse(warpy, true);
-			update_sample_path(warpy, "fox_48k.wav");
+			update_reverse(warpy, false);
+			update_sample_path(warpy, "tpt_57.wav");
 			update_vocoder_settings(warpy, speed_settings_2);
 			update_vocoder_settings(warpy, pitch_settings_2);
-			update_loop_times(warpy, 1);
+			update_loop_times(warpy, 0);
 			update_sustain_section(warpy, false);
-			update_release_loop_times(warpy, 1);
-			update_chorus_voices(warpy, 3);
+			update_release_loop_times(warpy, 0);
+			update_chorus_voices(warpy, 6);
 			update_chorus_mix(warpy, 1);
 			update_chorus_detune(warpy, 1);
-			update_chorus_stereo_spread(warpy, 0.5);
+			update_chorus_stereo_spread(warpy, 1);
 		}
 		//else {
 		//	update_gain(warpy, 0.9);
 		//	update_reverse(warpy, false);
-		//	update_sample_path(warpy, "fox_48k.wav");
+		//	update_sample_path(warpy, "tpt_57_48k.wav");
 		//	update_vocoder_settings(warpy, speed_settings_2);
 		//	update_vocoder_settings(warpy, pitch_settings_2);
 		//	update_loop_times(warpy, 1);
@@ -150,7 +150,7 @@ void play_test(struct warpy* warpy)
 
 		if      (i == note_length)
 			send_midi_message(warpy, c4_on, 3);
-		else if (i == note_length*2 - 1)
+		else if (i == note_length*10  - 1)
 			send_midi_message(warpy, c4_off, 3);
 		else if (i == note_length*2)
 			send_midi_message(warpy, c3_on, 3);

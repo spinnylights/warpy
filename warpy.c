@@ -305,7 +305,7 @@ static MYFLT scale_vibrato_freq(float freq)
 	return (MYFLT)freq * VIB_FREQ_MAX;
 }
 
-#define MAX_CHORUS_VOICES 3
+#define MAX_CHORUS_VOICES 6
 
 static MYFLT check_chorus_voices(float voices)
 {
@@ -328,76 +328,6 @@ static MYFLT get_vib_tempo_frac(float denom_indx)
 	if (denom_indx_int > max_tempo_denom)
 		denom_indx_int = max_tempo_denom;
 	return tempo_frac_denoms[denom_indx_int];
-}
-
-static unsigned chorus_scale_index(float scale_val)
-{
-	if (scale_val < 0)
-		scale_val = 0;
-	else if (scale_val > 1)
-		scale_val = 1;
-
-	return (unsigned)floor(scale_val * (CHORUS_SCALES_LEN - 1));
-}
-
-static MYFLT get_chorus_mix_center(float mix)
-{
-	return chorus_mix_center_scale[chorus_scale_index(mix)];
-}
-
-static MYFLT get_chorus_mix_sides(float mix)
-{
-	return chorus_mix_side_scale[chorus_scale_index(mix)];
-}
-
-static MYFLT get_chorus_detune(float detune_amt)
-{
-	return chorus_detune_scale[chorus_scale_index(detune_amt)];
-}
-
-static MYFLT get_chorus_detune_above_1(float detune_amt)
-{
-	return 0.01991221 * get_chorus_detune(detune_amt);
-}
-
-static MYFLT get_chorus_detune_below_1(float detune_amt)
-{
-	return -0.01952356 * get_chorus_detune(detune_amt);
-}
-
-static MYFLT get_chorus_detune_above_2(float detune_amt)
-{
-	return 0.06216538 * get_chorus_detune(detune_amt);
-}
-
-static MYFLT get_chorus_detune_below_2(float detune_amt)
-{
-	return -0.06288439 * get_chorus_detune(detune_amt);
-}
-
-static MYFLT get_chorus_detune_above_3(float detune_amt)
-{
-	return 0.10745242 * get_chorus_detune(detune_amt);
-}
-
-static MYFLT get_chorus_detune_below_3(float detune_amt)
-{
-	return -0.11002313 * get_chorus_detune(detune_amt);
-}
-
-static double pan_scale(double pan)
-{
-	return pan * M_PI_2;
-}
-
-static MYFLT left_channel_vol(float pan)
-{
-	return cos(pan_scale(pan));
-}
-
-static MYFLT right_channel_vol(float pan)
-{
-	return sin(pan_scale(pan));
 }
 
 struct cache {
@@ -439,28 +369,8 @@ struct cache {
 	struct param* vibrato_tempo_fraction;
 	struct param* chorus_voices;
 	struct param* chorus_mix;
-	struct param* chorus_mix_center;
-	struct param* chorus_mix_sides;
 	struct param* chorus_detune;
-	struct param* chorus_detune_above_1;
-	struct param* chorus_detune_below_1;
-	struct param* chorus_detune_above_2;
-	struct param* chorus_detune_below_2;
-	struct param* chorus_detune_above_3;
-	struct param* chorus_detune_below_3;
 	struct param* chorus_spread;
-	struct param* chorus_spread_above_1_l;
-	struct param* chorus_spread_below_1_l;
-	struct param* chorus_spread_above_2_l;
-	struct param* chorus_spread_below_2_l;
-	struct param* chorus_spread_above_3_l;
-	struct param* chorus_spread_below_3_l;
-	struct param* chorus_spread_above_1_r;
-	struct param* chorus_spread_below_1_r;
-	struct param* chorus_spread_above_2_r;
-	struct param* chorus_spread_below_2_r;
-	struct param* chorus_spread_above_3_r;
-	struct param* chorus_spread_below_3_r;
 };
 
 struct cache* create_cache(void)
@@ -523,49 +433,9 @@ struct cache* create_cache(void)
 	                                             "vibrato_tempo_fraction");
 	cache->chorus_voices = create_param(&check_chorus_voices,
 	                                    "chorus_voices");
-	cache->chorus_mix = create_param(NULL, "chorus_mix");
-	cache->chorus_mix_center = create_param(&get_chorus_mix_center,
-	                                        "chorus_mix_center");
-	cache->chorus_mix_sides = create_param(&get_chorus_mix_sides,
-	                                        "chorus_mix_sides");
+	cache->chorus_mix    = create_param(NULL, "chorus_mix");
 	cache->chorus_detune = create_param(NULL, "chorus_detune");
-	cache->chorus_detune_above_1 = create_param(&get_chorus_detune_above_1,
-	                                            "chorus_detune_above_1");
-	cache->chorus_detune_below_1 = create_param(&get_chorus_detune_below_1,
-	                                            "chorus_detune_below_1");
-	cache->chorus_detune_above_2 = create_param(&get_chorus_detune_above_2,
-	                                            "chorus_detune_above_2");
-	cache->chorus_detune_below_2 = create_param(&get_chorus_detune_below_2,
-	                                            "chorus_detune_below_2");
-	cache->chorus_detune_above_3 = create_param(&get_chorus_detune_above_3,
-	                                            "chorus_detune_above_3");
-	cache->chorus_detune_below_3 = create_param(&get_chorus_detune_below_3,
-	                                            "chorus_detune_below_3");
 	cache->chorus_spread = create_param(NULL, "chorus_spread");
-	cache->chorus_spread_above_1_l = create_param(&left_channel_vol,
-	                                            "chorus_spread_above_1_l");
-	cache->chorus_spread_below_1_l = create_param(&left_channel_vol,
-	                                            "chorus_spread_below_1_l");
-	cache->chorus_spread_above_2_l = create_param(&left_channel_vol,
-	                                            "chorus_spread_above_2_l");
-	cache->chorus_spread_below_2_l = create_param(&left_channel_vol,
-	                                            "chorus_spread_below_2_l");
-	cache->chorus_spread_above_3_l = create_param(&left_channel_vol,
-	                                            "chorus_spread_above_3_l");
-	cache->chorus_spread_below_3_l = create_param(&left_channel_vol,
-	                                            "chorus_spread_below_3_l");
-	cache->chorus_spread_above_1_r = create_param(&right_channel_vol,
-	                                            "chorus_spread_above_1_r");
-	cache->chorus_spread_below_1_r = create_param(&right_channel_vol,
-	                                            "chorus_spread_below_1_r");
-	cache->chorus_spread_above_2_r = create_param(&right_channel_vol,
-	                                            "chorus_spread_above_2_r");
-	cache->chorus_spread_below_2_r = create_param(&right_channel_vol,
-	                                            "chorus_spread_below_2_r");
-	cache->chorus_spread_above_3_r = create_param(&right_channel_vol,
-	                                            "chorus_spread_above_3_r");
-	cache->chorus_spread_below_3_r = create_param(&right_channel_vol,
-	                                            "chorus_spread_below_3_r");
 	return cache;
 }
 
@@ -608,28 +478,8 @@ void destroy_cache(struct cache* cache)
 	free(cache->vibrato_tempo_fraction);
 	free(cache->chorus_voices);
 	free(cache->chorus_mix);
-	free(cache->chorus_mix_center);
-	free(cache->chorus_mix_sides);
 	free(cache->chorus_detune);
-	free(cache->chorus_detune_above_1);
-	free(cache->chorus_detune_below_1);
-	free(cache->chorus_detune_above_2);
-	free(cache->chorus_detune_below_2);
-	free(cache->chorus_detune_above_3);
-	free(cache->chorus_detune_below_3);
 	free(cache->chorus_spread);
-	free(cache->chorus_spread_above_1_l);
-	free(cache->chorus_spread_below_1_l);
-	free(cache->chorus_spread_above_2_l);
-	free(cache->chorus_spread_below_2_l);
-	free(cache->chorus_spread_above_3_l);
-	free(cache->chorus_spread_below_3_l);
-	free(cache->chorus_spread_above_1_r);
-	free(cache->chorus_spread_below_1_r);
-	free(cache->chorus_spread_above_2_r);
-	free(cache->chorus_spread_below_2_r);
-	free(cache->chorus_spread_above_3_r);
-	free(cache->chorus_spread_below_3_r);
 	free(cache);
 }
 
@@ -839,8 +689,9 @@ static void set_params(struct warpy* warpy,
 
 static inline void register_opcodes(CSOUND* csound)
 {
-	csoundSetOption(csound, "--opcode-lib=opcodes/libvocparam.so");
-	csoundSetOption(csound, "--opcode-lib=opcodes/libchorusig.so");
+	//csoundSetOption(csound, "--opcode-lib=opcodes/libvocparam.so");
+	//csoundSetOption(csound, "--opcode-lib=opcodes/libvochorus.so");
+	//csoundSetMessageLevel(csound, 0);
 }
 
 bool start_warpy(struct warpy* warpy)
@@ -1174,92 +1025,15 @@ void update_chorus_voices(struct warpy* warpy, unsigned voices)
 
 void update_chorus_mix(struct warpy* warpy, float mix)
 {
-	check_cache(warpy->cache->chorus_mix, mix);
-	if (!warpy->cache->chorus_mix->is_cs_current) {
-		update_against_cache(warpy,
-		                     warpy->cache->chorus_mix_center,
-		                     mix);
-		update_against_cache(warpy,
-		                     warpy->cache->chorus_mix_sides,
-		                     mix);
-	}
+	update_against_cache(warpy, warpy->cache->chorus_mix, mix);
 }
 
 void update_chorus_detune(struct warpy* warpy, float detune)
 {
-	check_cache(warpy->cache->chorus_detune, detune);
-	if (!warpy->cache->chorus_detune->is_cs_current) {
-		update_against_cache(warpy,
-		                     warpy->cache->chorus_detune_above_1,
-		                     detune);
-		update_against_cache(warpy,
-		                     warpy->cache->chorus_detune_below_1,
-		                     detune);
-		update_against_cache(warpy,
-		                     warpy->cache->chorus_detune_above_2,
-		                     detune);
-		update_against_cache(warpy,
-		                     warpy->cache->chorus_detune_below_2,
-		                     detune);
-		update_against_cache(warpy,
-		                     warpy->cache->chorus_detune_above_3,
-		                     detune);
-		update_against_cache(warpy,
-		                     warpy->cache->chorus_detune_below_3,
-		                     detune);
-	}
+	update_against_cache(warpy, warpy->cache->chorus_detune, detune);
 }
-
-#define SIDE_SPREAD_PAN(spread, distance) (spread*distance + 0.5)
-
-static const double one_sixth = (double)1/6;
-static const double one_third = (double)1/3;
 
 void update_chorus_stereo_spread(struct warpy* warpy, float spread)
 {
-	check_cache(warpy->cache->chorus_spread, spread);
-	if (!warpy->cache->chorus_spread->is_cs_current) {
-		double above_1 = SIDE_SPREAD_PAN( one_sixth, spread);
-		double below_1 = SIDE_SPREAD_PAN(-one_sixth, spread);
-		double above_2 = SIDE_SPREAD_PAN( one_third, spread);
-		double below_2 = SIDE_SPREAD_PAN(-one_third, spread);
-		double above_3 = SIDE_SPREAD_PAN( 0.5, spread);
-		double below_3 = SIDE_SPREAD_PAN(-0.5, spread);
-		update_against_cache(warpy,
-		                     warpy->cache->chorus_spread_above_1_l,
-		                     above_1);
-		update_against_cache(warpy,
-		                     warpy->cache->chorus_spread_below_1_l,
-		                     below_1);
-		update_against_cache(warpy,
-		                     warpy->cache->chorus_spread_above_1_r,
-		                     above_1);
-		update_against_cache(warpy,
-		                     warpy->cache->chorus_spread_below_1_r,
-		                     below_1);
-		update_against_cache(warpy,
-		                     warpy->cache->chorus_spread_above_2_l,
-		                     above_2);
-		update_against_cache(warpy,
-		                     warpy->cache->chorus_spread_below_2_l,
-		                     below_2);
-		update_against_cache(warpy,
-		                     warpy->cache->chorus_spread_above_2_r,
-		                     above_2);
-		update_against_cache(warpy,
-		                     warpy->cache->chorus_spread_below_2_r,
-		                     below_2);
-		update_against_cache(warpy,
-		                     warpy->cache->chorus_spread_above_3_l,
-		                     above_3);
-		update_against_cache(warpy,
-		                     warpy->cache->chorus_spread_below_3_l,
-		                     below_3);
-		update_against_cache(warpy,
-		                     warpy->cache->chorus_spread_above_3_r,
-		                     above_3);
-		update_against_cache(warpy,
-		                     warpy->cache->chorus_spread_below_3_r,
-		                     below_3);
-	}
+	update_against_cache(warpy, warpy->cache->chorus_spread, spread);
 }

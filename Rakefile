@@ -14,16 +14,20 @@ FLAGS = %w(
 ).join(' ')
 
 PROD_FLAGS = %w(
-  -O2
+  -ggdb
+  -Ofast
   -march=native
 ).join(' ')
 
-TEST_FLAGS = '-ggdb'
+TEST_FLAGS = %w(
+  -ggdb
+).join(' ')
 
 LIBS_A = %w(
   -lm
   -lcsound64
   -lsox
+  -lfftw3
 )
 
 LIBS = LIBS_A.join(' ')
@@ -56,8 +60,7 @@ CLEAN.include('**/*.o')
 CLEAN.include('*.mf')
 
 def compile_opcode(t)
-  lcsound = LIBS_A.filter {|l| l =~ /csound/}.join(' ')
-  sh "#{COMPILER} #{FLAGS} #{TEST_FLAGS} -shared -fpic #{t.prerequisites[0]} #{lcsound} -o opcodes/#{t.name}"
+  sh "#{COMPILER} #{FLAGS} #{TEST_FLAGS} -shared -fPIC #{t.prerequisites[0]} #{LIBS} -o opcodes/#{t.name}"
 end
 
 FileList['opcodes/*.c'].each do |opcode|
@@ -80,7 +83,18 @@ task 'test_warpy' => [:clean, 'test_warpy.o', 'warpy.o'] do |t|
   sh "#{COMPILER} #{FLAGS} #{TEST_FLAGS} #{t.prerequisites[1]} #{t.prerequisites[2]} #{LIBS} #{TEST_LIBS} -o #{t.name}"
 end
 
-task 'test_warpy_profile' => [:clean, ORC_OUTFILE, 'warpy.c', 'test_warpy.c'] do |t|
+LD_LIB_PATH = 'LD_LIBRARY_PATH=$HOME/build/csound-6.13.0/build/:$HOME/code/c/warpy/opcodes/:$HOME/build/fftw-3.3.8/.libs/:$LD_LIBRARY_PATH'
+LD_PRE='LD_PRELOAD="libvocparam.so libchorusig.so"'
+
+task 'prof_warpy' => [:clean, 'test_warpy'] do |t|
+  sh "valgrind --trace-children=yes -v --tool=callgrind env #{LD_LIB_PATH} #{LD_PRE} ./#{t.prerequisites[1]}"
+end
+
+task 'debug' => 'test_warpy' do |t|
+  sh "#{LD_LIB_PATH} gdb ./test_warpy"
+end
+
+task 'test_warpy_pgo' => [:clean, ORC_OUTFILE, 'warpy.c', 'test_warpy.c'] do |t|
   sh "#{COMPILER} #{FLAGS} #{PROD_FLAGS} -fprofile-generate #{t.prerequisites[2]} #{t.prerequisites[3]} #{LIBS} #{TEST_LIBS} -o instrumented"
   sh "./instrumented"
   sh "#{COMPILER} #{FLAGS} #{PROD_FLAGS} -fprofile-use #{t.prerequisites[2]} #{t.prerequisites[3]} #{LIBS} #{TEST_LIBS} -o test_warpy_profiled"
