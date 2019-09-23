@@ -100,4 +100,7 @@ void update_chorus_mix(struct warpy* warpy, float mix);
 void update_chorus_detune(struct warpy* warpy, float detune);
 void update_chorus_stereo_spread(struct warpy* warpy, float spread);
 
+void update_note_pan_center(struct warpy* warpy, float center);
+void update_note_pan_amount(struct warpy* warpy, float amount);
+
 #endif

@@ -56,6 +56,8 @@ enum port_indices {
 	WARPY_SUSTAIN_LEVEL,
 	WARPY_RELEASE_TIME,
 	WARPY_RELEASE_SHAPE,
+	WARPY_NOTE_PAN_CENTER,
+	WARPY_NOTE_PAN_AMT,
 	WARPY_GAIN
 };
 
@@ -104,6 +106,8 @@ struct lv2 {
 		float*                   sustain_level;
 		float*                   release_time;
 		float*                   release_shape;
+		float*                   note_pan_center;
+		float*                   note_pan_amt;
 		float*                   gain;
 	} ports;
 
@@ -287,6 +291,12 @@ static void connect_port(LV2_Handle instance,
 		case WARPY_RELEASE_SHAPE:
 			lv2->ports.release_shape = (float*)data;
 			break;
+		case WARPY_NOTE_PAN_CENTER:
+			lv2->ports.note_pan_center = (float*)data;
+			break;
+		case WARPY_NOTE_PAN_AMT:
+			lv2->ports.note_pan_amt = (float*)data;
+			break;
 		case WARPY_GAIN:
 			lv2->ports.gain = (float*)data;
 			break;
@@ -341,6 +351,8 @@ static void update_control_ports(struct lv2* lv2)
 	update_chorus_detune(lv2->warpy, *(lv2->ports.chorus_detune));
 	update_chorus_stereo_spread(lv2->warpy,
 	                            *(lv2->ports.chorus_stereo_spread));
+	update_note_pan_center(lv2->warpy, *(lv2->ports.note_pan_center));
+	update_note_pan_amount(lv2->warpy, *(lv2->ports.note_pan_amt));
 
 	struct envelope env;
 	env.attack_time   = *(lv2->ports.attack_time);

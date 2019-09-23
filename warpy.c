@@ -371,6 +371,8 @@ struct cache {
 	struct param* chorus_mix;
 	struct param* chorus_detune;
 	struct param* chorus_spread;
+	struct param* note_pan_center;
+	struct param* note_pan_amt;
 };
 
 struct cache* create_cache(void)
@@ -436,6 +438,8 @@ struct cache* create_cache(void)
 	cache->chorus_mix    = create_param(NULL, "chorus_mix");
 	cache->chorus_detune = create_param(NULL, "chorus_detune");
 	cache->chorus_spread = create_param(NULL, "chorus_spread");
+	cache->note_pan_center = create_param(NULL, "note_pan_center");
+	cache->note_pan_amt = create_param(NULL, "note_pan_amt");
 	return cache;
 }
 
@@ -480,6 +484,8 @@ void destroy_cache(struct cache* cache)
 	free(cache->chorus_mix);
 	free(cache->chorus_detune);
 	free(cache->chorus_spread);
+	free(cache->note_pan_center);
+	free(cache->note_pan_amt);
 	free(cache);
 }
 
@@ -1036,4 +1042,14 @@ void update_chorus_detune(struct warpy* warpy, float detune)
 void update_chorus_stereo_spread(struct warpy* warpy, float spread)
 {
 	update_against_cache(warpy, warpy->cache->chorus_spread, spread);
+}
+
+void update_note_pan_center(struct warpy* warpy, float center)
+{
+	update_against_cache(warpy, warpy->cache->note_pan_center, center);
+}
+
+void update_note_pan_amount(struct warpy* warpy, float amount)
+{
+	update_against_cache(warpy, warpy->cache->note_pan_amt, amount);
 }

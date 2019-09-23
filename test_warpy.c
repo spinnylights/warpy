@@ -26,14 +26,14 @@ void write_wav(struct warpy* warpy, float* samples, uint64_t size)
 
 void play_test(struct warpy* warpy)
 {
-	uint8_t c4_on[] =  {  note_on(0x1a) };
-	uint8_t c4_off[] = { note_off(0x1a) };
-	uint8_t c3_on[] =  {  note_on(0x2d) };
-	uint8_t c3_off[] = { note_off(0x2d) };
-	uint8_t c5_on[] =  {  note_on(0x39) };
-	uint8_t c5_off[] = { note_off(0x39) };
-	uint8_t c6_on[] =  {  note_on(0x45) };
-	uint8_t c6_off[] = { note_off(0x45) };
+	uint8_t c4_on[] =  {  note_on(0x28) };
+	uint8_t c4_off[] = { note_off(0x28) };
+	uint8_t c3_on[] =  {  note_on(0x34) };
+	uint8_t c3_off[] = { note_off(0x34) };
+	uint8_t c5_on[] =  {  note_on(0x4c) };
+	uint8_t c5_off[] = { note_off(0x4c) };
+	uint8_t c6_on[] =  {  note_on(0x58) };
+	uint8_t c6_off[] = { note_off(0x58) };
 
 	int secs = 18;
 	int length = secs * SAMPLE_RATE;
@@ -68,15 +68,15 @@ void play_test(struct warpy* warpy)
 	pitch_settings_1.type   = VOC_PITCH;
 	pitch_settings_1.adjust = 0.5;
 	pitch_settings_1.center = 57;
-	pitch_settings_1.lower_scale = 0;
-	pitch_settings_1.upper_scale = 0;
+	pitch_settings_1.lower_scale = -1;
+	pitch_settings_1.upper_scale = 1;
 
 	struct vocoder_settings pitch_settings_2;
 	pitch_settings_2.type   = VOC_PITCH;
 	pitch_settings_2.adjust = 0.5;
 	pitch_settings_2.center = 57;
-	pitch_settings_2.lower_scale = 0;
-	pitch_settings_2.upper_scale = 0;
+	pitch_settings_2.lower_scale = -1;
+	pitch_settings_2.upper_scale = 1;
 
 	struct bounds main_bounds = get_main_bounds(warpy);
 	struct bounds sustain_bounds = get_sustain_bounds(warpy);
@@ -121,6 +121,8 @@ void play_test(struct warpy* warpy)
 			update_chorus_mix(warpy, 0);
 			update_chorus_detune(warpy, 0);
 			update_chorus_stereo_spread(warpy, 0);
+			update_note_pan_center(warpy, 57);
+			update_note_pan_amount(warpy, 1);
 		}
 		//else if (i < note_length*5) {
 		else {

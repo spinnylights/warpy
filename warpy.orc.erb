@@ -130,9 +130,13 @@ instr 1
         kchorusmix    chnget "chorus_mix"
         kchorusdetune chnget "chorus_detune"
         kchorusspread chnget "chorus_spread"
+        ; per-note panning
+        knotepancenter chnget "note_pan_center"
+        knotepanamt    chnget "note_pan_amt"
 
         iamp  ampmidi 1
         imfreq cpsmidi
+        imnote notnum
 
         kmainloops init 0
         kreleased init 0
@@ -199,8 +203,23 @@ instr 1
             asigl = asigll + asigrl
             asigr = asiglr + asigrr
         endif
-            asigl = asigl * aenv
-            asigr = asigr * aenv
+
+        if knotepanamt == 0 then
+            knotepan = 0.5
+        else
+            knotepanamt = 1 / knotepanamt
+            knotepan = ((imnote - knotepancenter) /
+                        (87.0 * knotepanamt)) + 0.5
+        endif
+
+        if knotepan < 0 then
+            knotepan = 0
+        elseif knotepan > 1 then
+            knotepan = 1
+        endif
+
+        asigl = asigl * aenv * cos(knotepan*$M_PI_2)
+        asigr = asigr * aenv * sin(knotepan*$M_PI_2)
 
         kdialdown init 1
         kstop init 0

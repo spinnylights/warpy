@@ -100,10 +100,10 @@ task 'test_warpy_pgo' => [:clean, ORC_OUTFILE, 'warpy.c', 'test_warpy.c'] do |t|
   sh "#{COMPILER} #{FLAGS} #{PROD_FLAGS} -fprofile-use #{t.prerequisites[2]} #{t.prerequisites[3]} #{LIBS} #{TEST_LIBS} -o test_warpy_profiled"
 end
 
-file 'warpy.so' => [:clean, ORC_OUTFILE, 'warpy.c', 'warpy_lv2.c', 'warpy.ttl', 'opcodes/libvocparam.c'] do |t|
-  sh "#{COMPILER} #{FLAGS} #{PROD_FLAGS} -c -fpic #{t.prerequisites[2]} #{t.prerequisites[3]}"
-  objs = [t.prequisites[2], t.prerequisites[3]].join(' ')
-  sh "#{COMPILER} #{FLAGS} #{PROD_FLAGS} -shared -o #{t.name} #{objs} #{LIBS}"
+file 'warpy.so' => [:clean, ORC_OUTFILE, 'warpy.c', 'warpy_lv2.c', 'warpy.ttl', 'opcodes/libvocparam.c', 'opcodes/libvochorus.c'] do |t|
+  sh "#{COMPILER} #{FLAGS} #{PROD_FLAGS} -c -fPIC #{t.prerequisites[2]} #{t.prerequisites[3]}"
+  objs = [t.prerequisites[2], t.prerequisites[3]].join(' ')
+  sh "#{COMPILER} #{FLAGS} #{PROD_FLAGS} -fPIC -shared -o #{t.name} #{objs} #{LIBS}"
 end
 
 task default: :build
